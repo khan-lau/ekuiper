@@ -16,7 +16,7 @@ package protobuf
 
 import (
 	"fmt"
-
+	"runtime"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
 
@@ -34,9 +34,16 @@ type Converter struct {
 var protoParser *protoparse.Parser
 
 func init() {
-	etcDir, _ := kconf.GetLoc("etc/schemas/protobuf/")
-	dataDir, _ := kconf.GetLoc("data/schemas/protobuf/")
-	protoParser = &protoparse.Parser{ImportPaths: []string{etcDir, dataDir}}
+	if runtime.GOOS == "windows" { // TODO: check runtime.GOOS
+		etcDir, _ := kconf.GetLoc("etc\\schemas\\protobuf\\")
+		dataDir, _ := kconf.GetLoc("data\\schemas\\protobuf\\")
+		protoParser = &protoparse.Parser{ImportPaths: []string{etcDir, dataDir}}
+	} else {
+		etcDir, _ := kconf.GetLoc("etc/schemas/protobuf/")
+		dataDir, _ := kconf.GetLoc("data/schemas/protobuf/")
+		protoParser = &protoparse.Parser{ImportPaths: []string{etcDir, dataDir}}
+	}
+
 }
 
 func NewConverter(schemaFile string, soFile string, messageName string) (message.Converter, error) {

@@ -310,16 +310,16 @@ func InitConf() {
 		},
 	}
 
-	err = LoadConfigFromPath(path.Join(cpath, ConfFileName), &kc)
+	err = LoadConfigFromPath(filepath.Join(cpath, ConfFileName), &kc)
 	if err != nil {
 		Log.Fatal(err)
 		panic(err)
 	}
 	Config = &kc
-	if 0 == len(Config.Basic.Ip) {
+	if len(Config.Basic.Ip) == 0 {
 		Config.Basic.Ip = "0.0.0.0"
 	}
-	if 0 == len(Config.Basic.RestIp) {
+	if len(Config.Basic.RestIp) == 0 {
 		Config.Basic.RestIp = "0.0.0.0"
 	}
 

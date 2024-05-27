@@ -91,7 +91,7 @@ func absolutePath(loc string) (dir string, err error) {
 			break
 		}
 	}
-	if 0 == len(dir) {
+	if len(dir) == 0 {
 		return "", fmt.Errorf("location %s is not allowed for absolute mode", loc)
 	}
 	return dir, nil
@@ -99,18 +99,18 @@ func absolutePath(loc string) (dir string, err error) {
 
 // GetLoc subdir must be a relative path
 func GetLoc(subdir string) (string, error) {
-	if "relative" == PathConfig.LoadFileType {
+	if  PathConfig.LoadFileType == "relative" {
 		return relativePath(subdir)
 	}
 
-	if "absolute" == PathConfig.LoadFileType {
+	if  PathConfig.LoadFileType == "absolute" {
 		return absolutePath(subdir)
 	}
-	return "", fmt.Errorf("Unrecognized loading method.")
+	return "", fmt.Errorf("%s", "Unrecognized loading method.")
 }
 
-func relativePath(subdir string) (dir string, err error) {
-	dir, err = os.Getwd()
+func relativePath(subdir string) (string, error) {
+	dir, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
@@ -119,7 +119,7 @@ func relativePath(subdir string) (dir string, err error) {
 		Log.Infof("Specified Kuiper base folder at location %s.\n", base)
 		dir = base
 	}
-	confDir := path.Join(dir, subdir)
+	confDir := filepath.Join(dir, subdir)
 	if _, err := os.Stat(confDir); os.IsNotExist(err) {
 		lastdir := dir
 		for len(dir) > 0 {
@@ -127,7 +127,7 @@ func relativePath(subdir string) (dir string, err error) {
 			if lastdir == dir {
 				break
 			}
-			confDir = path.Join(dir, subdir)
+			confDir := filepath.Join(dir, subdir)
 			if _, err := os.Stat(confDir); os.IsNotExist(err) {
 				lastdir = dir
 				continue
@@ -140,7 +140,7 @@ func relativePath(subdir string) (dir string, err error) {
 		return confDir, nil
 	}
 
-	return "", fmt.Errorf("dir %s not found, please make sure it is created.", confDir)
+	return "", fmt.Errorf("dir %s not found, please make sure it is created.\n", confDir)
 }
 
 func ProcessPath(p string) (string, error) {

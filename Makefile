@@ -12,6 +12,12 @@ FAILPOINT_DISABLE := find $$PWD/ -type d | grep -vE "(\.git|tools)" | xargs tool
 
 TARGET ?= lfedge/ekuiper
 
+ifeq ($(OS),Windows_NT) 
+    uname_S=Windows
+else
+    uname_S=$(shell uname -s)
+endif
+
 export KUIPER_SOURCE := $(shell pwd)
 
 .PHONY: build
@@ -45,7 +51,13 @@ build_without_edgex: build_prepare
 	GO111MODULE=on CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o kuiper cmd/kuiper/main.go
 	GO111MODULE=on CGO_ENABLED=1 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o kuiperd cmd/kuiperd/main.go
 	@if [ "$$(uname -s)" = "Linux" ] && [ ! -z $$(which upx) ]; then upx ./kuiper; upx ./kuiperd; fi
+ifeq ($(uname_S), Windows)
 	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+	@mv $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper.exe
+	@mv $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd.exe
+else 
+	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+endif
 	@echo "Build successfully"
 
 .PHONY: pkg_without_edgex
@@ -57,7 +69,13 @@ build_with_edgex: build_prepare
 	GO111MODULE=on CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags "edgex include_nats_messaging" -o kuiper cmd/kuiper/main.go
 	GO111MODULE=on CGO_ENABLED=1 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags "edgex include_nats_messaging" -o kuiperd cmd/kuiperd/main.go
 	@if [ "$$(uname -s)" = "Linux" ] && [ ! -z $$(which upx) ]; then upx ./kuiper; upx ./kuiperd; fi
+ifeq ($(uname_S), Windows)
 	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+	@mv $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper.exe
+	@mv $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd.exe
+else 
+	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+endif
 	@echo "Build successfully"
 
 .PHONY: build_with_edgex_and_script
@@ -65,7 +83,13 @@ build_with_edgex_and_script: build_prepare
 	GO111MODULE=on CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags "edgex include_nats_messaging" -o kuiper cmd/kuiper/main.go
 	GO111MODULE=on CGO_ENABLED=1 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags "edgex include_nats_messaging script" -o kuiperd cmd/kuiperd/main.go
 	@if [ "$$(uname -s)" = "Linux" ] && [ ! -z $$(which upx) ]; then upx ./kuiper; upx ./kuiperd; fi
+ifeq ($(uname_S), Windows)
 	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+	@mv $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper.exe
+	@mv $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd.exe
+else 
+	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+endif
 	@echo "Build successfully"
 
 .PHONY: pkg_with_edgex
@@ -77,7 +101,13 @@ build_with_fdb: build_prepare
 	GO111MODULE=on CGO_ENABLED=1 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags "fdb" -o kuiper cmd/kuiper/main.go
 	GO111MODULE=on CGO_ENABLED=1 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags "fdb" -o kuiperd cmd/kuiperd/main.go
 	@if [ "$$(uname -s)" = "Linux" ] && [ ! -z $$(which upx) ]; then upx ./kuiper; upx ./kuiperd; fi
+ifeq ($(uname_S), Windows)
 	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+	@mv $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper.exe
+	@mv $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd.exe
+else 
+	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+endif
 	@echo "Build successfully"
 
 .PHONY: pkg_with_fdb
@@ -88,7 +118,12 @@ pkg_with_fdb: build_with_fdb
 build_core: build_prepare
 	GO111MODULE=on CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags core -o kuiperd cmd/kuiperd/main.go
 	@if [ "$$(uname -s)" = "Linux" ] && [ ! -z $$(which upx) ]; then upx ./kuiperd; fi
+ifeq ($(uname_S), Windows)
 	@mv ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+	@mv $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd.exe
+else 
+	@mv ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+endif
 	@echo "Build successfully"
 
 PLUGINS_IN_FULL := \
@@ -108,7 +143,13 @@ build_full: build_prepare
 	GO111MODULE=on CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o kuiper cmd/kuiper/main.go
 	GO111MODULE=on CGO_ENABLED=1 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags "full include_nats_messaging" -o kuiperd cmd/kuiperd/main.go
 	@if [ "$$(uname -s)" = "Linux" ] && [ ! -z $$(which upx) ]; then upx ./kuiper; upx ./kuiperd; fi
+ifeq ($(uname_S), Windows)
 	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+	@mv $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper.exe
+	@mv $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd.exe
+else 
+	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+endif
 	@while read plugin; do \
 		while read line; do \
 			type=$$(echo $$(dirname $$line) | cut -d'/' -f2); \
@@ -146,7 +187,13 @@ build_with_wasm: build_prepare
 	GO111MODULE=on CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o kuiper cmd/kuiper/main.go
 	GO111MODULE=on CGO_ENABLED=1 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags "wasmedge" -o kuiperd cmd/kuiperd/main.go
 	@if [ "$$(uname -s)" = "Linux" ] && [ ! -z $$(which upx) ]; then upx ./kuiper; upx ./kuiperd; fi
+ifeq ($(uname_S), Windows)
 	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+	@mv $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper.exe
+	@mv $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd.exe
+else 
+	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+endif
 	@echo "Build successfully"
 
 
@@ -212,3 +259,13 @@ failpoint-enable: tools/failpoint/bin/failpoint-ctl
 failpoint-disable: tools/failpoint/bin/failpoint-ctl
 # Restoring gofail failpoints...
 	@$(FAILPOINT_DISABLE)
+
+.PHONY: run
+
+run:
+ifeq ($(uname_S), Windows)
+	@set KuiperBaseKey="$(BUILD_PATH)/$(PACKAGE_NAME)"&&$(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd
+endif
+ifeq ($(uname_S), Linux)
+	@export KuiperBaseKey="$(BUILD_PATH)/$(PACKAGE_NAME)"&&$(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd
+endif
