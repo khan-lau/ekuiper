@@ -259,13 +259,3 @@ failpoint-enable: tools/failpoint/bin/failpoint-ctl
 failpoint-disable: tools/failpoint/bin/failpoint-ctl
 # Restoring gofail failpoints...
 	@$(FAILPOINT_DISABLE)
-
-.PHONY: run
-
-run:
-ifeq ($(uname_S), Windows)
-	@set KuiperBaseKey="$(BUILD_PATH)/$(PACKAGE_NAME)"&&$(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd
-endif
-ifeq ($(uname_S), Linux)
-	@export KuiperBaseKey="$(BUILD_PATH)/$(PACKAGE_NAME)"&&$(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd
-endif

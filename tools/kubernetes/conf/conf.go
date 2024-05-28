@@ -20,7 +20,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -111,7 +110,7 @@ func (c *config) initConfig() bool {
 		return false
 	}
 	if _, err = os.Stat(c.LogPath); os.IsNotExist(err) {
-		if err = os.MkdirAll(path.Dir(c.LogPath), 0o755); nil != err {
+		if err = os.MkdirAll(filepath.Dir(c.LogPath), 0o755); nil != err {
 			fmt.Println("mak logdir err : ", err)
 			return false
 		}
@@ -133,7 +132,7 @@ func (c *config) initLog() bool {
 	Log.SetReportCaller(true)
 	Log.SetFormatter(&logrus.TextFormatter{
 		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
-			filename := path.Base(f.File)
+			filename := filepath.Base(f.File)
 			return "", fmt.Sprintf("%s:%d", filename, f.Line)
 		},
 		DisableColors: true,

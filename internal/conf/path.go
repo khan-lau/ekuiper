@@ -17,7 +17,6 @@ package conf
 import (
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 )
@@ -68,7 +67,7 @@ func GetDataLoc() (string, error) {
 		if TestId != "" {
 			dir = TestId
 		}
-		d := path.Join(dataDir, dir)
+		d := filepath.Join(dataDir, dir)
 		if _, err := os.Stat(d); os.IsNotExist(err) {
 			err = os.MkdirAll(d, 0o755)
 			if err != nil {
@@ -99,11 +98,11 @@ func absolutePath(loc string) (dir string, err error) {
 
 // GetLoc subdir must be a relative path
 func GetLoc(subdir string) (string, error) {
-	if  PathConfig.LoadFileType == "relative" {
+	if PathConfig.LoadFileType == "relative" {
 		return relativePath(subdir)
 	}
 
-	if  PathConfig.LoadFileType == "absolute" {
+	if PathConfig.LoadFileType == "absolute" {
 		return absolutePath(subdir)
 	}
 	return "", fmt.Errorf("%s", "Unrecognized loading method.")

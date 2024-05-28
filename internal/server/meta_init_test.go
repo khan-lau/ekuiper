@@ -20,7 +20,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -47,10 +47,10 @@ func (suite *MetaTestSuite) SetupTest() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	if err := meta.ReadSinkMetaFile(path.Join(confDir, "sinks", "mqtt.json"), true); nil != err {
+	if err := meta.ReadSinkMetaFile(filepath.Join(confDir, "sinks", "mqtt.json"), true); nil != err {
 		fmt.Println(err)
 	}
-	if err := meta.ReadSourceMetaFile(path.Join(confDir, "mqtt_source.json"), true, false); nil != err {
+	if err := meta.ReadSourceMetaFile(filepath.Join(confDir, "mqtt_source.json"), true, false); nil != err {
 		fmt.Println(err)
 	}
 }
@@ -136,35 +136,35 @@ func (suite *MetaTestSuite) TestSourceConfKeyHandler() {
 	req, _ := http.NewRequest(http.MethodPut, "/metadata/sources/mqtt/confKeys/test", bytes.NewBufferString(`{"qos": 0, "server": "tcp://10.211.55.6:1883"}`))
 	w := httptest.NewRecorder()
 	DataDir, _ := conf.GetDataLoc()
-	os.MkdirAll(path.Join(DataDir, "sources"), 0o755)
-	if _, err := os.Create(path.Join(DataDir, "sources", "mqtt.yaml")); err != nil {
+	os.MkdirAll(filepath.Join(DataDir, "sources"), 0o755)
+	if _, err := os.Create(filepath.Join(DataDir, "sources", "mqtt.yaml")); err != nil {
 		fmt.Println(err)
 	}
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
-	os.Remove(path.Join(DataDir, "sources", "mqtt.yaml"))
-	os.Remove(path.Join(DataDir, "sources"))
+	os.Remove(filepath.Join(DataDir, "sources", "mqtt.yaml"))
+	os.Remove(filepath.Join(DataDir, "sources"))
 }
 
 func (suite *MetaTestSuite) TestConnectionConfKeyHandler() {
 	req, _ := http.NewRequest(http.MethodPut, "/metadata/connections/mqtt/confKeys/test", bytes.NewBufferString(`{"qos": 0, "server": "tcp://10.211.55.6:1883"}`))
 	w := httptest.NewRecorder()
 	DataDir, _ := conf.GetDataLoc()
-	os.MkdirAll(path.Join(DataDir, "connections"), 0o755)
-	if _, err := os.Create(path.Join(DataDir, "connections", "connection.yaml")); err != nil {
+	os.MkdirAll(filepath.Join(DataDir, "connections"), 0o755)
+	if _, err := os.Create(filepath.Join(DataDir, "connections", "connection.yaml")); err != nil {
 		fmt.Println(err)
 	}
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
-	os.Remove(path.Join(DataDir, "connections", "connection.yaml"))
-	os.Remove(path.Join(DataDir, "connections"))
+	os.Remove(filepath.Join(DataDir, "connections", "connection.yaml"))
+	os.Remove(filepath.Join(DataDir, "connections"))
 }
 
 func (suite *MetaTestSuite) TestSinkConfKeyHandler() {
 	req, _ := http.NewRequest(http.MethodPut, "/metadata/sinks/mqtt/confKeys/test", bytes.NewBufferString(`{"qos": 0, "server": "tcp://10.211.55.6:1883", "password":"123456"}`))
 	DataDir, _ := conf.GetDataLoc()
-	os.MkdirAll(path.Join(DataDir, "sinks"), 0o755)
-	if _, err := os.Create(path.Join(DataDir, "sinks", "mqtt.yaml")); err != nil {
+	os.MkdirAll(filepath.Join(DataDir, "sinks"), 0o755)
+	if _, err := os.Create(filepath.Join(DataDir, "sinks", "mqtt.yaml")); err != nil {
 		fmt.Println(err)
 	}
 	w := httptest.NewRecorder()
@@ -180,8 +180,8 @@ func (suite *MetaTestSuite) TestSinkConfKeyHandler() {
 		"a":          "123",
 		"password":   "123456",
 	}, got)
-	os.Remove(path.Join(DataDir, "sinks", "mqtt.yaml"))
-	os.Remove(path.Join(DataDir, "sinks"))
+	os.Remove(filepath.Join(DataDir, "sinks", "mqtt.yaml"))
+	os.Remove(filepath.Join(DataDir, "sinks"))
 }
 
 func (suite *MetaTestSuite) TestResourcesHandler() {
@@ -195,8 +195,8 @@ func (suite *MetaTestSuite) TestHiddenPassword() {
 	req, _ := http.NewRequest(http.MethodPut, "/metadata/connections/test/confKeys/test", bytes.NewBufferString(`{"password": "123456","token":"123456","url": "sqlserver://username:password123456@140.210.204.147/testdb"}`))
 	w := httptest.NewRecorder()
 	DataDir, _ := conf.GetDataLoc()
-	os.MkdirAll(path.Join(DataDir, "connections"), 0o755)
-	if _, err := os.Create(path.Join(DataDir, "connections", "connection.yaml")); err != nil {
+	os.MkdirAll(filepath.Join(DataDir, "connections"), 0o755)
+	if _, err := os.Create(filepath.Join(DataDir, "connections", "connection.yaml")); err != nil {
 		fmt.Println(err)
 	}
 	suite.r.ServeHTTP(w, req)
@@ -207,8 +207,8 @@ func (suite *MetaTestSuite) TestHiddenPassword() {
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 	assert.Equal(suite.T(), bytes.NewBufferString(`{"test":{"password":"******","token":"******","url":"sqlserver://username:******@140.210.204.147/testdb"}}`), w.Body)
 
-	os.Remove(path.Join(DataDir, "connections", "connection.yaml"))
-	os.Remove(path.Join(DataDir, "connections"))
+	os.Remove(filepath.Join(DataDir, "connections", "connection.yaml"))
+	os.Remove(filepath.Join(DataDir, "connections"))
 }
 
 func TestMetaTestSuite(t *testing.T) {

@@ -22,7 +22,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"os"
-	"path"
+	"path/filepath"
 	"sort"
 	"sync"
 
@@ -58,14 +58,14 @@ func (f *labelImage) Exec(args []interface{}, ctx api.FunctionContext) (interfac
 	}
 	var outerErr error
 	f.once.Do(func() {
-		ploc := path.Join(ctx.GetRootPath(), "data", "functions")
-		f.labels, err = loadLabels(path.Join(ploc, f.labelPath))
+		ploc := filepath.Join(ctx.GetRootPath(), "data", "functions")
+		f.labels, err = loadLabels(filepath.Join(ploc, f.labelPath))
 		if err != nil {
 			outerErr = fmt.Errorf("fail to load labels: %s", err)
 			return
 		}
 
-		model := tflite.NewModelFromFile(path.Join(ploc, f.modelPath))
+		model := tflite.NewModelFromFile(filepath.Join(ploc, f.modelPath))
 		if model == nil {
 			outerErr = fmt.Errorf("fail to load model: %s", err)
 			return

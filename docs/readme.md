@@ -48,7 +48,11 @@
 >> ```
 >
 > 启动时
->> 1. 启动指令 `export KuiperBaseKey="C:\\Private\\Test\\ekuiper\\" && ./_build/kuiper-1.13.3-windows-amd64/bin/kuiperd`
+>> 1. 启动指令 
+>>   1.1 mingw bash `export KuiperBaseKey="C:\\Private\\Test\\ekuiper\\" && ./_build/kuiper-1.13.3-windows-amd64/bin/kuiperd`
+>>   1.2 Powershell `$env:KuiperBaseKey="E:\Private\Project\Golang\ekuiper\_build\kuiper-1.13.3-1-g9c350505-windows-amd64";E:\Private\Project\Golang\ekuiper\_build\kuiper-1.13.3-1-g9c350505-windows-amd64\bin\kuiperd.exe`
+>>   1.3 dos cmd `set KuiperBaseKey=E:\Private\Project\Golang\ekuiper\_build\kuiper-1.13.3-1-g9c350505-windows-amd64&&E:\Private\Project\Golang\ekuiper\_build\kuiper-1.13.3-1-g9c350505-windows-amd64\bin\kuiperd.exe`
+>>
 >> 2. 启动前 `C:\\Private\\Test\\ekuiper\\` 目录下需要 创建 `etc\\schemas\\protobuf` `data\\schemas\\protobuf` `log` `plugins\\functions` `plugins\\portable` `plugins\\sinks` `plugins\\sources` `plugins\\wasm` 目录
 >> 3. 启动前 需要将配置文件放置于 `etc\\kuiper.yaml`
 >> 4. cli服务端口 `20498`,  restful 端口 `9081`
@@ -131,3 +135,17 @@ if not exist .\\plugins\\wasm (
 ### JWT用户认证全流程
 
 见文档[一文讲解JWT用户认证全流程](https://zhuanlan.zhihu.com/p/158186278)
+
+
+## 规则管理
+
+* 检查规则     POST   http://localhost:9081/rules/validate
+* 新增规则     POST   http://localhost:9081/rules
+* 展示所有规则 GET    http://localhost:9081/rules 
+* 浏览指定规则 GET    http://localhost:9081/rules/{id}
+* 修改规则     PUT    http://localhost:9081/rules/{id}
+* 删除规则     DELETE http://localhost:9081/rules/{id}
+* 查询规则状态 GET    http://localhost:9081/rules/{id}/status
+* 启动规则     POST   http://localhost:9081/rules/{id}/start
+* 停止规则     POST   http://localhost:9081/rules/{id}/stop
+* 重启规则     POST   http://localhost:9081/rules/{id}/restart

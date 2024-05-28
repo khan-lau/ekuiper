@@ -25,7 +25,7 @@
     "type": "string",
     "hint": {
       "en_US": "The script text, now supports JavaScript only. Must have a function named exec, whose parameter is the message and the return value must be the processed message.",
-      "zh_CN": "脚本函数的文本，支持javascript。必须包含一个函数，函数名为exec，参数为message，返回值为处理后的message"
+      "zh_CN": "脚本函数的文本, 支持javascript. 必须包含一个函数, 函数名为exec, 参数为message, 返回值为处理后的message"
     },
     "label": {
       "en_US": "Script",

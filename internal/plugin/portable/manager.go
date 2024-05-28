@@ -22,7 +22,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -150,12 +149,12 @@ func (m *Manager) doRegister(name string, pi *PluginInfo, isInit bool) error {
 
 	if !isInit {
 		for _, s := range pi.Sources {
-			if err := meta.ReadSourceMetaFile(path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SOURCE], s+`.json`), true, false); nil != err {
+			if err := meta.ReadSourceMetaFile(filepath.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SOURCE], s+`.json`), true, false); nil != err {
 				conf.Log.Errorf("read source json file:%v", err)
 			}
 		}
 		for _, s := range pi.Sinks {
-			if err := meta.ReadSinkMetaFile(path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SINK], s+`.json`), true); nil != err {
+			if err := meta.ReadSinkMetaFile(filepath.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SINK], s+`.json`), true); nil != err {
 				conf.Log.Errorf("read sink json file:%v", err)
 			}
 		}
@@ -204,7 +203,7 @@ func (m *Manager) Register(p plugin.Plugin) error {
 		return fmt.Errorf("invalid name %s: duplicate", name)
 	}
 
-	zipPath := path.Join(m.pluginDir, name+".zip")
+	zipPath := filepath.Join(m.pluginDir, name+".zip")
 	// clean up: delete zip file and unzip files in error
 	defer os.Remove(zipPath)
 	// download
@@ -294,9 +293,9 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 	for _, file := range r.File {
 		fileName := file.Name
 		if strings.HasPrefix(fileName, "sources/") || strings.HasPrefix(fileName, "sinks/") || strings.HasPrefix(fileName, "functions/") {
-			target = path.Join(m.pluginConfDir, fileName)
+			target = filepath.Join(m.pluginConfDir, fileName)
 		} else {
-			target = path.Join(pluginTarget, fileName)
+			target = filepath.Join(pluginTarget, fileName)
 			if fileName == "install.sh" {
 				needInstall = true
 			}
@@ -321,7 +320,7 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 		// run install script if there is
 		shell := make([]string, len(shellParas))
 		copy(shell, shellParas)
-		spath := path.Join(pluginTarget, "install.sh")
+		spath := filepath.Join(pluginTarget, "install.sh")
 		shell = append(shell, spath)
 		if 1 != len(shell) {
 			copy(shell[1:], shell[0:])
@@ -376,24 +375,24 @@ func (m *Manager) Delete(name string) error {
 	m.reg.Delete(name)
 	// delete files and uninstall metas
 	for _, s := range pinfo.Sources {
-		p := path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SOURCE], s+".yaml")
+		p := filepath.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SOURCE], s+".yaml")
 		os.Remove(p)
-		p = path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SOURCE], s+".json")
+		p = filepath.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SOURCE], s+".json")
 		os.Remove(p)
 		meta.UninstallSource(s)
 	}
 	for _, s := range pinfo.Sinks {
-		p := path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SINK], s+".yaml")
+		p := filepath.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SINK], s+".yaml")
 		os.Remove(p)
-		p = path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SINK], s+".json")
+		p = filepath.Join(m.pluginConfDir, plugin.PluginTypes[plugin.SINK], s+".json")
 		os.Remove(p)
 		meta.UninstallSink(s)
 	}
 	for _, s := range pinfo.Functions {
-		p := path.Join(m.pluginConfDir, plugin.PluginTypes[plugin.FUNCTION], s+".json")
+		p := filepath.Join(m.pluginConfDir, plugin.PluginTypes[plugin.FUNCTION], s+".json")
 		os.Remove(p)
 	}
-	_ = os.RemoveAll(path.Join(m.pluginDir, name))
+	_ = os.RemoveAll(filepath.Join(m.pluginDir, name))
 	m.removePluginInstallScript(name)
 	// Kill the process in the end, and return error if it cannot be deleted
 	pm := runtime.GetPluginInsManager()

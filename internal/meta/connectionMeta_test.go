@@ -15,7 +15,7 @@
 package meta
 
 import (
-	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -27,7 +27,7 @@ func TestGetMqttConnectionMeta(t *testing.T) {
 		return
 	}
 
-	if err = ReadSourceMetaFile(path.Join(confDir, "mqtt_source.json"), true, false); nil != err {
+	if err = ReadSourceMetaFile(filepath.Join(confDir, "mqtt_source.json"), true, false); nil != err {
 		return
 	}
 

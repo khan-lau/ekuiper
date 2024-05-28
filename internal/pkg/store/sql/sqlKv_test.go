@@ -16,7 +16,6 @@ package sql
 
 import (
 	"os"
-	"path"
 	"path/filepath"
 	"testing"
 
@@ -79,7 +78,7 @@ func TestSqlKvGetKeyedState(t *testing.T) {
 }
 
 func deleteIfExists(abs string) error {
-	absPath := path.Join(abs, SDbName)
+	absPath := filepath.Join(abs, SDbName)
 	if f, _ := os.Stat(absPath); f != nil {
 		return os.Remove(absPath)
 	}

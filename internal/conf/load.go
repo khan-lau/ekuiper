@@ -33,7 +33,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -53,7 +52,7 @@ func LoadConfigByName(name string, c interface{}) error {
 	if err != nil {
 		return err
 	}
-	p := path.Join(dir, name)
+	p := filepath.Join(dir, name)
 	return LoadConfigFromPath(p, c)
 }
 
@@ -91,7 +90,7 @@ func CorrectsConfigKeysByJson(configs map[string]interface{}, jsonFilePath strin
 	if err != nil {
 		return err
 	}
-	path := path.Join(dir, jsonFilePath)
+	path := filepath.Join(dir, jsonFilePath)
 	m, err := loadJsonForYaml(path)
 	if err != nil {
 		return err
@@ -107,7 +106,7 @@ func CorrectsConfigKeysByJson(configs map[string]interface{}, jsonFilePath strin
 }
 
 func getPrefix(p string) string {
-	_, file := path.Split(p)
+	_, file := filepath.Split(p)
 	return strings.ToUpper(strings.TrimSuffix(file, filepath.Ext(file)))
 }
 

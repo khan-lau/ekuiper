@@ -16,7 +16,7 @@ package binary
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -26,7 +26,7 @@ import (
 )
 
 func TestMessageDecode(t *testing.T) {
-	image, err := os.ReadFile(path.Join("../../../docs", "cover.jpg"))
+	image, err := os.ReadFile(filepath.Join("../../../docs", "cover.jpg"))
 	if err != nil {
 		t.Errorf("Cannot read image: %v", err)
 	}

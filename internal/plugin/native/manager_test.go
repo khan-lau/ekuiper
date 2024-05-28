@@ -20,7 +20,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"testing"
@@ -294,13 +294,13 @@ func checkFile(pluginDir string, etcDir string, t plugin.PluginType, name string
 		}
 	}
 
-	soPath := path.Join(pluginDir, plugin.PluginTypes[t], soName)
+	soPath := filepath.Join(pluginDir, plugin.PluginTypes[t], soName)
 	_, err := os.Stat(soPath)
 	if err != nil {
 		return err
 	}
 	if t == plugin.SOURCE {
-		etcPath := path.Join(etcDir, plugin.PluginTypes[t], name+".yaml")
+		etcPath := filepath.Join(etcDir, plugin.PluginTypes[t], name+".yaml")
 		_, err = os.Stat(etcPath)
 		if err != nil {
 			return err

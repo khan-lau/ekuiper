@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -369,7 +368,7 @@ func (m *Manager) Create(r *ServiceCreationRequest) error {
 	if !httpx.IsValidUrl(uri) {
 		return fmt.Errorf("invalid file path %s", uri)
 	}
-	zipPath := path.Join(m.etcDir, name+".zip")
+	zipPath := filepath.Join(m.etcDir, name+".zip")
 	// clean up: delete zip file and unzip files in error
 	defer os.Remove(zipPath)
 	// download
@@ -400,7 +399,7 @@ func (m *Manager) Delete(name string) error {
 		return err
 	}
 	_ = m.serviceInstallKV.Delete(name)
-	path := path.Join(m.etcDir, name+".json")
+	path := filepath.Join(m.etcDir, name+".json")
 	err = os.Remove(path)
 	if err != nil {
 		kconf.Log.Errorf("remove service json fails: %v", err)
@@ -448,7 +447,7 @@ func (m *Manager) unzip(name, src string) error {
 	}
 	// unzip
 	for _, file := range r.File {
-		err := filex.UnzipTo(file, path.Join(m.etcDir, file.Name))
+		err := filex.UnzipTo(file, filepath.Join(m.etcDir, file.Name))
 		if err != nil {
 			return err
 		}

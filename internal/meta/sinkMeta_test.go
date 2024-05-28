@@ -16,7 +16,7 @@ package meta
 
 import (
 	"fmt"
-	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -31,7 +31,7 @@ func TestHintWhenModifySink(t *testing.T) {
 		return
 	}
 
-	if err = ReadSinkMetaFile(path.Join(confDir, "sinks", "mqtt.json"), true); nil != err {
+	if err = ReadSinkMetaFile(filepath.Join(confDir, "sinks", "mqtt.json"), true); nil != err {
 		t.Error(err)
 		return
 	}

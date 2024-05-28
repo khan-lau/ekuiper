@@ -18,7 +18,7 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -68,7 +68,7 @@ func insensitiveGetFilePath(prikeyName string) (string, error) {
 		return "", err
 	}
 
-	dir := path.Join(confDir, RSAKeyDir)
+	dir := filepath.Join(confDir, RSAKeyDir)
 	dirEntries, err := os.ReadDir(dir)
 	if nil != err {
 		return "", err
@@ -77,7 +77,7 @@ func insensitiveGetFilePath(prikeyName string) (string, error) {
 	for _, entry := range dirEntries {
 		fileName := entry.Name()
 		if strings.EqualFold(fileName, prikeyName) {
-			filePath := path.Join(dir, fileName)
+			filePath := filepath.Join(dir, fileName)
 			return filePath, nil
 		}
 	}

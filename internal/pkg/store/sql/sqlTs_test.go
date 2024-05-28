@@ -16,7 +16,6 @@ package sql
 
 import (
 	"os"
-	"path"
 	"path/filepath"
 	"testing"
 
@@ -67,7 +66,7 @@ func TestSqlTsDeleteBefore(t *testing.T) {
 }
 
 func deleteTIfExists(abs string) error {
-	absPath := path.Join(abs, TDbName)
+	absPath := filepath.Join(abs, TDbName)
 	if f, _ := os.Stat(absPath); f != nil {
 		return os.Remove(absPath)
 	}

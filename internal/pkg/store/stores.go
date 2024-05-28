@@ -16,7 +16,7 @@ package store
 
 import (
 	"fmt"
-	"path"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -193,7 +193,7 @@ func DropCacheKVForRule(rule string) error {
 	if cacheStores == nil {
 		return fmt.Errorf("cache stores are not initialized")
 	}
-	cacheStores.DropRefKVs(path.Join("sink", rule))
+	cacheStores.DropRefKVs(filepath.Join("sink", rule))
 	return nil
 }
 

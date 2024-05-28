@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -107,7 +107,7 @@ func cleanStateData() {
 	if err != nil {
 		log.Panic(err)
 	}
-	c := path.Join(dbDir, state.CheckpointListKey)
+	c := filepath.Join(dbDir, state.CheckpointListKey)
 	err = os.RemoveAll(c)
 	if err != nil {
 		conf.Log.Error(err)

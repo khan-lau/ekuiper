@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
@@ -997,7 +997,7 @@ func TestPreprocessorForBinary(t *testing.T) {
 	if err != nil {
 		t.Errorf("Cannot find docs folder: %v", err)
 	}
-	image, err := os.ReadFile(path.Join(docsFolder, "cover.jpg"))
+	image, err := os.ReadFile(filepath.Join(docsFolder, "cover.jpg"))
 	if err != nil {
 		t.Errorf("Cannot read image: %v", err)
 	}

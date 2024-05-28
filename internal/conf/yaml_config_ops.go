@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"reflect"
 	"sync"
 
@@ -335,8 +335,8 @@ func (c *SourceConfigKeysOps) SaveCfgToStorage() error {
 			return err
 		}
 
-		dir := path.Join(confDir, "sources")
-		filePath := path.Join(dir, pluginName+".yaml")
+		dir := filepath.Join(confDir, "sources")
+		filePath := filepath.Join(dir, pluginName+".yaml")
 		cfg := c.CopyUpdatableConfContent()
 		err = filex.WriteYamlMarshal(filePath, cfg)
 		return err
@@ -360,7 +360,7 @@ func (c *SinkConfigKeysOps) SaveCfgToStorage() error {
 			return err
 		}
 
-		dir := path.Join(confDir, "sinks")
+		dir := filepath.Join(confDir, "sinks")
 		if IsTesting {
 			if _, err := os.Stat(dir); os.IsNotExist(err) {
 				err = os.MkdirAll(dir, 0o755)
@@ -369,7 +369,7 @@ func (c *SinkConfigKeysOps) SaveCfgToStorage() error {
 				}
 			}
 		}
-		filePath := path.Join(dir, pluginName+".yaml")
+		filePath := filepath.Join(dir, pluginName+".yaml")
 		cfg := c.CopyUpdatableConfContent()
 		err = filex.WriteYamlMarshal(filePath, cfg)
 		return err
@@ -395,7 +395,7 @@ func (p *ConnectionConfigKeysOps) SaveCfgToStorage() error {
 
 		cfg := p.CopyUpdatableConfContent()
 
-		yamlPath := path.Join(confDir, "connections/connection.yaml")
+		yamlPath := filepath.Join(confDir, "connections/connection.yaml")
 
 		yamlData := make(map[string]interface{})
 		err = filex.ReadYamlUnmarshal(yamlPath, &yamlData)
@@ -442,13 +442,14 @@ func NewConfigOperatorFromSourceStorage(pluginName string) (ConfigOperator, erro
 	if nil != err {
 		return nil, err
 	}
-	dir := path.Join(confDir, "sources")
+
+	dir := filepath.Join(confDir, "sources")
 	fileName := pluginName
-	if "mqtt" == pluginName {
+	if pluginName == "mqtt" {
 		fileName = "mqtt_source"
 		dir = confDir
 	}
-	filePath := path.Join(dir, fileName+`.yaml`)
+	filePath := filepath.Join(dir, fileName+`.yaml`)
 	// Just ignore error if yaml not found
 	_ = LoadConfigFromPath(filePath, &c.etcCfg)
 
@@ -464,10 +465,10 @@ func NewConfigOperatorFromSourceStorage(pluginName string) (ConfigOperator, erro
 		if nil != err {
 			return nil, err
 		}
-		dir = path.Join(dataDir, "sources")
+		dir = filepath.Join(dataDir, "sources")
 		fileName = pluginName
 
-		filePath = path.Join(dir, fileName+`.yaml`)
+		filePath = filepath.Join(dir, fileName+`.yaml`)
 		_ = filex.ReadYamlUnmarshal(filePath, &c.dataCfg)
 	}
 	return c, nil
@@ -514,9 +515,9 @@ func NewConfigOperatorFromSinkStorage(pluginName string) (ConfigOperator, error)
 		if nil != err {
 			return nil, err
 		}
-		dir := path.Join(dataDir, "sinks")
+		dir := filepath.Join(dataDir, "sinks")
 
-		filePath := path.Join(dir, pluginName+`.yaml`)
+		filePath := filepath.Join(dir, pluginName+`.yaml`)
 		_ = filex.ReadYamlUnmarshal(filePath, &c.dataCfg)
 	}
 	return c, nil
@@ -556,7 +557,7 @@ func NewConfigOperatorFromConnectionStorage(pluginName string) (ConfigOperator, 
 	if nil != err {
 		return nil, err
 	}
-	yamlPath := path.Join(confDir, "connections/connection.yaml")
+	yamlPath := filepath.Join(confDir, "connections/connection.yaml")
 	yamlData := make(map[string]interface{})
 	err = LoadConfigFromPath(yamlPath, &yamlData)
 	if nil != err {
@@ -590,7 +591,7 @@ func NewConfigOperatorFromConnectionStorage(pluginName string) (ConfigOperator, 
 		if nil != err {
 			return nil, err
 		}
-		yamlPath = path.Join(confDir, "connections/connection.yaml")
+		yamlPath = filepath.Join(confDir, "connections/connection.yaml")
 		yamlData = make(map[string]interface{})
 		_ = filex.ReadYamlUnmarshal(yamlPath, &yamlData)
 

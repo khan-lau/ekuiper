@@ -17,7 +17,7 @@ package mocknode
 import (
 	"encoding/base64"
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
@@ -1194,7 +1194,7 @@ func getImg() ([]byte, string) {
 	if err != nil {
 		conf.Log.Fatalf("Cannot find docs folder: %v", err)
 	}
-	image, err := os.ReadFile(path.Join(docsFolder, "cover.jpg"))
+	image, err := os.ReadFile(filepath.Join(docsFolder, "cover.jpg"))
 	if err != nil {
 		conf.Log.Fatalf("Cannot read image: %v", err)
 	}

@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -123,7 +123,7 @@ func (s *server) init() bool {
 	conf := kconf.GetConf()
 	dirCommand := conf.GetCommandDir()
 	s.dirCommand = dirCommand
-	s.fileHistory = path.Join(path.Dir(dirCommand), ".history")
+	s.fileHistory = filepath.Join(filepath.Dir(dirCommand), ".history")
 	if _, err := os.Stat(s.fileHistory); os.IsNotExist(err) {
 		if _, err = os.Create(s.fileHistory); nil != err {
 			kconf.Log.Info(err)
@@ -185,7 +185,7 @@ func (s *server) processDir() bool {
 		hisFile.setLoadTime(time.Now().Unix())
 		s.mapHistoryFile[entry.Name()] = hisFile
 
-		filePath := path.Join(s.dirCommand, entry.Name())
+		filePath := filepath.Join(s.dirCommand, entry.Name())
 		file := new(fileData)
 		err = kconf.LoadFileUnmarshal(filePath, file)
 		if nil != err {

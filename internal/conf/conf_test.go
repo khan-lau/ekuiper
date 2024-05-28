@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -432,7 +432,7 @@ func TestLoad(t *testing.T) {
 	InitConf()
 	cpath, err := GetConfLoc()
 	require.NoError(t, err)
-	LoadConfigFromPath(path.Join(cpath, ConfFileName), &Config)
+	LoadConfigFromPath(filepath.Join(cpath, ConfFileName), &Config)
 	require.Equal(t, 10, Config.Rule.RestartStrategy.Attempts)
 }
 

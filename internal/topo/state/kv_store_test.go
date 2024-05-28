@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"reflect"
 	"sync"
 	"testing"
@@ -278,7 +278,7 @@ func cleanStateData() {
 	if err != nil {
 		log.Panic(err)
 	}
-	c := path.Join(dbDir)
+	c := filepath.Join(dbDir)
 	err = os.RemoveAll(c)
 	if err != nil {
 		conf.Log.Error(err)

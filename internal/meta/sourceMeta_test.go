@@ -16,7 +16,7 @@ package meta
 
 import (
 	"fmt"
-	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -31,7 +31,7 @@ func TestGetMqttSourceMeta(t *testing.T) {
 		return
 	}
 
-	if err = ReadSourceMetaFile(path.Join(confDir, "mqtt_source.json"), true, false); nil != err {
+	if err = ReadSourceMetaFile(filepath.Join(confDir, "mqtt_source.json"), true, false); nil != err {
 		t.Error(err)
 		return
 	}
@@ -58,7 +58,7 @@ func TestGetSqlSourceMeta(t *testing.T) {
 		return
 	}
 
-	if err = ReadSourceMetaFile(path.Join(confDir, "sources", "httppull.json"), true, false); nil != err {
+	if err = ReadSourceMetaFile(filepath.Join(confDir, "sources", "httppull.json"), true, false); nil != err {
 		t.Error(err)
 		return
 	}
@@ -83,7 +83,7 @@ func TestGetSqlSinkMeta(t *testing.T) {
 		return
 	}
 
-	if err = ReadSinkMetaFile(path.Join(confDir, "sinks", "mqtt.json"), true); nil != err {
+	if err = ReadSinkMetaFile(filepath.Join(confDir, "sinks", "mqtt.json"), true); nil != err {
 		t.Error(err)
 		return
 	}

@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"plugin"
 	"regexp"
@@ -123,7 +122,7 @@ func InitManager() (*Manager, error) {
 
 func findAll(t plugin2.PluginType, pluginDir string) (result map[string]string, err error) {
 	result = make(map[string]string)
-	dir := path.Join(pluginDir, plugin2.PluginTypes[t])
+	dir := filepath.Join(pluginDir, plugin2.PluginTypes[t])
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		return
@@ -135,7 +134,7 @@ func findAll(t plugin2.PluginType, pluginDir string) (result map[string]string, 
 			n, v := parseName(baseName)
 			// load the plugins when ekuiper set up
 			if !conf.IsTesting {
-				if _, err := manager.loadRuntime(t, n, path.Join(dir, baseName), ""); err != nil {
+				if _, err := manager.loadRuntime(t, n, filepath.Join(dir, baseName), ""); err != nil {
 					continue
 				}
 			}
@@ -266,7 +265,7 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 	}
 
 	var err error
-	zipPath := path.Join(rr.pluginDir, name+".zip")
+	zipPath := filepath.Join(rr.pluginDir, name+".zip")
 
 	// clean up: delete zip file and unzip files in error
 	defer func(name string) { _ = os.Remove(name) }(zipPath)
@@ -309,7 +308,7 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 
 	switch t {
 	case plugin2.SINK:
-		if err := meta.ReadSinkMetaFile(path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], name+`.json`), true); nil != err {
+		if err := meta.ReadSinkMetaFile(filepath.Join(rr.pluginConfDir, plugin2.PluginTypes[t], name+`.json`), true); nil != err {
 			conf.Log.Errorf("readSinkFile:%v", err)
 		}
 	case plugin2.SOURCE:
@@ -323,7 +322,7 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 		if err != nil {
 			isLookup = false
 		}
-		if err := meta.ReadSourceMetaFile(path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], name+`.json`), isScan, isLookup); nil != err {
+		if err := meta.ReadSourceMetaFile(filepath.Join(rr.pluginConfDir, plugin2.PluginTypes[t], name+`.json`), isScan, isLookup); nil != err {
 			conf.Log.Errorf("readSourceFile:%v", err)
 		}
 	}
@@ -368,7 +367,7 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 		soPath,
 	}
 	// Find etc folder
-	etcPath := path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], name)
+	etcPath := filepath.Join(rr.pluginConfDir, plugin2.PluginTypes[t], name)
 	if fi, err := os.Stat(etcPath); err == nil {
 		if fi.Mode().IsDir() {
 			paths = append(paths, etcPath)
@@ -376,19 +375,19 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 	}
 	switch t {
 	case plugin2.SOURCE:
-		yamlPaths := path.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.SOURCE], name+".yaml")
+		yamlPaths := filepath.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.SOURCE], name+".yaml")
 		_ = os.Remove(yamlPaths)
-		srcJsonPath := path.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.SOURCE], name+".json")
+		srcJsonPath := filepath.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.SOURCE], name+".json")
 		_ = os.Remove(srcJsonPath)
 		meta.UninstallSource(name)
 	case plugin2.SINK:
-		yamlPaths := path.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.SINK], name+".yaml")
+		yamlPaths := filepath.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.SINK], name+".yaml")
 		_ = os.Remove(yamlPaths)
-		sinkJsonPaths := path.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.SINK], name+".json")
+		sinkJsonPaths := filepath.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.SINK], name+".json")
 		_ = os.Remove(sinkJsonPaths)
 		meta.UninstallSink(name)
 	case plugin2.FUNCTION:
-		funcJsonPath := path.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.FUNCTION], name+".json")
+		funcJsonPath := filepath.Join(rr.pluginConfDir, plugin2.PluginTypes[plugin2.FUNCTION], name+".json")
 		_ = os.Remove(funcJsonPath)
 		old := make([]string, 0)
 		if ok, err := rr.funcSymbolsDb.Get(name, &old); err != nil {
@@ -455,7 +454,7 @@ func (rr *Manager) GetPluginInfo(t plugin2.PluginType, name string) (map[string]
 
 func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []string) (string, error) {
 	var filenames []string
-	tempPath := path.Join(rr.pluginDir, "temp", plugin2.PluginTypes[t], name)
+	tempPath := filepath.Join(rr.pluginDir, "temp", plugin2.PluginTypes[t], name)
 	defer func(path string) {
 		_ = os.RemoveAll(path)
 	}(tempPath)
@@ -484,7 +483,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 	expFiles := 1
 	if t == plugin2.SOURCE {
 		yamlFile = name + ".yaml"
-		yamlPath = path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], yamlFile)
+		yamlPath = filepath.Join(rr.pluginConfDir, plugin2.PluginTypes[t], yamlFile)
 		expFiles = 2
 	}
 	var revokeFiles []string
@@ -519,14 +518,14 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 				continue
 			}
 		case fileName == name+".json":
-			jsonPath := path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], fileName)
+			jsonPath := filepath.Join(rr.pluginConfDir, plugin2.PluginTypes[t], fileName)
 			if err := filex.UnzipTo(file, jsonPath); nil != err {
 				conf.Log.Errorf("Failed to decompress the metadata %s file", fileName)
 			} else {
 				revokeFiles = append(revokeFiles, jsonPath)
 			}
 		case soPrefix.Match([]byte(fileName)):
-			soPath = path.Join(rr.pluginDir, plugin2.PluginTypes[t], fileName)
+			soPath = filepath.Join(rr.pluginDir, plugin2.PluginTypes[t], fileName)
 			err = filex.UnzipTo(file, soPath)
 			if err != nil {
 				return version, err
@@ -536,12 +535,12 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 			soName, version = parseName(fileName)
 			soFileChecked = true
 		case strings.HasPrefix(fileName, "etc/"):
-			err = filex.UnzipTo(file, path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], strings.Replace(fileName, "etc", name, 1)))
+			err = filex.UnzipTo(file, filepath.Join(rr.pluginConfDir, plugin2.PluginTypes[t], strings.Replace(fileName, "etc", name, 1)))
 			if err != nil {
 				return version, err
 			}
 		default:
-			err = filex.UnzipTo(file, path.Join(tempPath, fileName))
+			err = filex.UnzipTo(file, filepath.Join(tempPath, fileName))
 			if err != nil {
 				return version, err
 			}
@@ -554,7 +553,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		// run install script if there is
 		shell := make([]string, len(shellParas))
 		copy(shell, shellParas)
-		spath := path.Join(tempPath, "install.sh")
+		spath := filepath.Join(tempPath, "install.sh")
 		shell = append(shell, spath)
 		if 1 != len(shell) {
 			copy(shell[1:], shell[0:])
@@ -788,9 +787,9 @@ func (rr *Manager) getSoFilePath(t plugin2.PluginType, name string, isSoName boo
 	if v != "" {
 		soFile = fmt.Sprintf("%s@%s.so", soname, v)
 	}
-	p := path.Join(rr.pluginDir, plugin2.PluginTypes[t], soFile)
+	p := filepath.Join(rr.pluginDir, plugin2.PluginTypes[t], soFile)
 	if _, err := os.Stat(p); err != nil {
-		p = path.Join(rr.pluginDir, plugin2.PluginTypes[t], ucFirst(soFile))
+		p = filepath.Join(rr.pluginDir, plugin2.PluginTypes[t], ucFirst(soFile))
 	}
 	if _, err := os.Stat(p); err != nil {
 		return "", errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("cannot find .so file for plugin %s", soname))

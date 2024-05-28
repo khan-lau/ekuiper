@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -111,7 +110,7 @@ func TestManager_Read(t *testing.T) {
 				Name:       "mirror2",
 				Version:    "v1.0.0",
 				Language:   "go",
-				Executable: filepath.Clean(path.Join(manager.pluginDir, "mirror2", "mirror2")),
+				Executable: filepath.Clean(filepath.Join(manager.pluginDir, "mirror2", "mirror2")),
 			},
 			Sources:   []string{"randomGo"},
 			Sinks:     []string{"fileGo"},
@@ -185,12 +184,12 @@ func TestDelete(t *testing.T) {
 
 func checkFileForMirror(pluginDir, etcDir string, exist bool) error {
 	requiredFiles := []string{
-		path.Join(pluginDir, "mirror2", "mirror2"),
-		path.Join(pluginDir, "mirror2", "mirror2.json"),
-		path.Join(etcDir, "sources", "randomGo.yaml"),
-		path.Join(etcDir, "sources", "randomGo.json"),
-		path.Join(etcDir, "functions", "echoGo.json"),
-		path.Join(etcDir, "sinks", "fileGo.json"),
+		filepath.Join(pluginDir, "mirror2", "mirror2"),
+		filepath.Join(pluginDir, "mirror2", "mirror2.json"),
+		filepath.Join(etcDir, "sources", "randomGo.yaml"),
+		filepath.Join(etcDir, "sources", "randomGo.json"),
+		filepath.Join(etcDir, "functions", "echoGo.json"),
+		filepath.Join(etcDir, "sinks", "fileGo.json"),
 	}
 	for _, file := range requiredFiles {
 		_, err := os.Stat(file)

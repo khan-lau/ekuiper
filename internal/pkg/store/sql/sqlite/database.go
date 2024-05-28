@@ -18,7 +18,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"sync"
 
 	// introduce sqlite
@@ -44,7 +44,7 @@ func NewSqliteDatabase(c definition.Config, name string) (definition.Database, e
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		os.MkdirAll(dir, os.ModePerm)
 	}
-	dbPath := path.Join(dir, name)
+	dbPath := filepath.Join(dir, name)
 	return &Database{
 		db:   nil,
 		Path: dbPath,

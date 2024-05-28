@@ -40,3 +40,5 @@ corss_build_for_rpm.tar
 
 .vscode/
 tools/lint/bin/
+kuiper
+kuiperd

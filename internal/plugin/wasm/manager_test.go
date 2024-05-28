@@ -19,7 +19,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -72,8 +72,8 @@ func TestManager_Install(t *testing.T) {
 
 func TestManager_Read(t *testing.T) {
 	requiredFiles := []string{
-		path.Join(manager.pluginDir, "fibonacci", "fibonacci.wasm"),
-		path.Join(manager.pluginDir, "fibonacci", "fibonacci.json"),
+		filepath.Join(manager.pluginDir, "fibonacci", "fibonacci.wasm"),
+		filepath.Join(manager.pluginDir, "fibonacci", "fibonacci.json"),
 	}
 	expPlugins := []*PluginInfo{
 		{
@@ -110,8 +110,8 @@ func TestDelete(t *testing.T) {
 
 func checkFileForMirror(pluginDir string, exist bool) error {
 	requiredFiles := []string{
-		path.Join(pluginDir, "fibonacci", "fibonacci.wasm"),
-		path.Join(pluginDir, "fibonacci", "fibonacci.json"),
+		filepath.Join(pluginDir, "fibonacci", "fibonacci.wasm"),
+		filepath.Join(pluginDir, "fibonacci", "fibonacci.json"),
 	}
 	for _, file := range requiredFiles {
 		_, err := os.Stat(file)

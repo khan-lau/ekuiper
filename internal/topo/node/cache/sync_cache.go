@@ -15,7 +15,7 @@
 package cache
 
 import (
-	"path"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -341,7 +341,7 @@ func (c *SyncCache) peakMemCache(_ api.StreamContext) ([]map[string]interface{},
 }
 
 func (c *SyncCache) initStore(ctx api.StreamContext) {
-	kvTable := path.Join("sink", ctx.GetRuleId()+ctx.GetOpId()+strconv.Itoa(ctx.GetInstanceId()))
+	kvTable := filepath.Join("sink", ctx.GetRuleId()+ctx.GetOpId()+strconv.Itoa(ctx.GetInstanceId()))
 	if c.cacheConf.CleanCacheAtStop {
 		ctx.GetLogger().Infof("creating cache store %s", kvTable)
 		_ = store.DropCacheKV(kvTable)
@@ -424,7 +424,7 @@ func (c *SyncCache) onClose(ctx api.StreamContext) {
 	}()
 	ctx.GetLogger().Infof("sink node %s instance cache %d closing", ctx.GetOpId(), ctx.GetInstanceId())
 	if c.cacheConf.CleanCacheAtStop {
-		kvTable := path.Join("sink", ctx.GetRuleId()+ctx.GetOpId()+strconv.Itoa(ctx.GetInstanceId()))
+		kvTable := filepath.Join("sink", ctx.GetRuleId()+ctx.GetOpId()+strconv.Itoa(ctx.GetInstanceId()))
 		ctx.GetLogger().Infof("cleaning cache store %s", kvTable)
 		_ = store.DropCacheKV(kvTable)
 	} else {
