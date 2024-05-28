@@ -1,25 +1,26 @@
 {
-    "about": {
-      "trial": true,
-      "author": {
-        "name": "carlclone",
-        "email": "carlclone@gmail.com",
-        "company": "personal",
-        "website": "https://www.github.com/carlclone"
-      },
-      "helpUrl": {
-        "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/kafka.html",
-        "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/kafka.html"
-      },
-      "description": {
-        "en_US": "This a sink for Kafka, it can be used for saving the analysis data into Kafka.",
-        "zh_CN": "为 Kafka 的持久化插件，可以用于将分析数据存入 Kafka 中"
-      }
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "carlclone",
+      "email": "carlclone@gmail.com",
+      "company": "personal",
+      "website": "https://www.github.com/carlclone"
     },
-    "libs": [
-      "github.com/segmentio/kafka-go@v0.4.39"
-    ],
-    "properties": [
+    "helpUrl": {
+      "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/kafka.html",
+      "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/kafka.html"
+    },
+    "description": {
+      "en_US": "This a sink for Kafka, it can be used for saving the analysis data into Kafka.",
+      "zh_CN": "为 Kafka 的持久化插件，可以用于将分析数据存入 Kafka 中"
+    }
+  },
+  "libs": [
+    "github.com/segmentio/kafka-go@v0.4.39"
+  ],
+  "properties": {
+    "default": [
       {
         "name": "brokers",
         "default": "127.0.0.1:9092,127.0.0.2:9092",
@@ -223,14 +224,14 @@
           "zh_CN": "Kafka 消息 Key"
         }
       }
-    ],
-    "node": {
-      "category": "sink",
-      "icon": "iconPath",
-      "label": {
-        "en": "custom KafkaPub",
-        "zh": "custom KafkaPub"
-      }
+    ]
+  },
+  "node": {
+    "category": "sink",
+    "icon": "iconPath",
+    "label": {
+      "en": "custom KafkaPub",
+      "zh": "custom KafkaPub"
     }
   }
-  
+}

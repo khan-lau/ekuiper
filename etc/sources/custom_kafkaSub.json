@@ -1,23 +1,24 @@
 {
-    "about": {
-      "trial": true,
-      "author": {
-        "name": "EMQ",
-        "email": "contact@emqx.io",
-        "company": "EMQ Technologies Co., Ltd",
-        "website": "https://www.emqx.io"
-      },
-      "helpUrl": {
-        "en_US": "https://ekuiper.org/docs/en/latest/guide/sources/plugin/kafka.html",
-        "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sources/plugin/kafka.html"
-      },
-      "description": {
-        "en_US": "This a source for Kafka, it can be used for consuming the data from Kafka.",
-        "zh_CN": "从 Kafka 中消费消息"
-      }
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
     },
-    "libs": [],
-    "properties": [
+    "helpUrl": {
+      "en_US": "https://ekuiper.org/docs/en/latest/guide/sources/plugin/kafka.html",
+      "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sources/plugin/kafka.html"
+    },
+    "description": {
+      "en_US": "This a source for Kafka, it can be used for consuming the data from Kafka.",
+      "zh_CN": "从 Kafka 中消费消息"
+    }
+  },
+  "libs": [],
+  "properties": {
+    "default": [
       {
         "name": "brokers",
         "default": "127.0.0.1:9092",
@@ -247,21 +248,21 @@
         "type": "bool",
         "hint": {
           "en_US": "Control if to skip the certification verification. If it is set to true, then skip certification verification; Otherwise, verify the certification.",
-          "zh_CN": "控制是否跳过证书认证。如果被设置为 true，那么跳过证书认证；否则进行证书验证。"
+          "zh_CN": "控制是否跳过证书认证。如果被设置为 true,那么跳过证书认证; 否则进行证书验证。"
         },
         "label": {
           "en_US": "Skip Certification verification",
           "zh_CN": "跳过证书验证"
         }
       }
-    ],
-    "node": {
-      "category": "source",
-      "icon": "iconPath",
-      "label": {
-        "en": "custom KafkaSub",
-        "zh": "custom KafkaSub"
-      }
+    ]
+  },
+  "node": {
+    "category": "source",
+    "icon": "iconPath",
+    "label": {
+      "en": "custom KafkaSub",
+      "zh": "custom KafkaSub"
     }
   }
-  
+}

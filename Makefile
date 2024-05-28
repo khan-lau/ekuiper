@@ -14,11 +14,15 @@ TARGET ?= lfedge/ekuiper
 
 ifeq ($(OS),Windows_NT) 
     uname_S=Windows
+else ifeq ($(OS),windows) 
+    uname_S=Windows
 else
     uname_S=$(shell uname -s)
 endif
 
 export KUIPER_SOURCE := $(shell pwd)
+
+$(warning os: ${uname_S}, $(OS), KUIPER_SOURCE: ${KUIPER_SOURCE})
 
 .PHONY: build
 build: build_without_edgex
@@ -259,3 +263,12 @@ failpoint-enable: tools/failpoint/bin/failpoint-ctl
 failpoint-disable: tools/failpoint/bin/failpoint-ctl
 # Restoring gofail failpoints...
 	@$(FAILPOINT_DISABLE)
+
+.PHONY: run
+run:
+	@echo "$(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd running "
+ifeq ($(uname_S), Windows)
+	export KuiperBaseKey="$$PWD/$(BUILD_PATH)/$(PACKAGE_NAME)" && $$PWD/$(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd
+else 
+	export KuiperBaseKey="$$PWD/$(BUILD_PATH)/$(PACKAGE_NAME)" && $$PWD/$(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd
+endif
