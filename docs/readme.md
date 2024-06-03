@@ -136,8 +136,36 @@ if not exist .\\plugins\\wasm (
 
 见文档[一文讲解JWT用户认证全流程](https://zhuanlan.zhihu.com/p/158186278)
 
+> 暂不开启JWT认证
 
-## 规则管理
+
+## 功能开发
+
+### 约定
+1. 该平台依赖定制版的 ekuiper v1.13
+  - 1.1 新增 `custom_redis` 内置 sink
+  - 1.2 新增 `custom_redis` 内置 source
+  - 1.3 新增 `custom_redisPub` 内置 sink
+  - 1.4 新增 `custom_redisSub` 内置 source , 经过该source的 `time时间戳字段` `精确到ms`
+  - 1.5 新增 `聚合函数` `first_value(col, ignoreNull = true)`
+  - 1.6 新增 `日期时间函数` `x_timestamp_in_duration(timestamp, start, end)`
+  - 1.7 新增 `日期时间函数` `x_from_timestamp(timestamp)`
+2. `custom_redisSub` 处理后的数据格式 见备注
+
+
+> 备注: 
+> ```json 
+>   {
+>     "devCode":  "DTXY:NFFC:0001:Q1", // 资产编码
+>     "metric":   "avg_speed",         // 指标
+>     "time":     1717058649000,       // 时间戳, 精确到ms
+>     "dataType": "F",                 // 数据类型
+>     "value":    23.001               // 数据
+>   }
+> ```
+
+
+### 规则管理
 
 * 检查规则     POST   http://localhost:9081/rules/validate
 * 新增规则     POST   http://localhost:9081/rules
@@ -149,3 +177,146 @@ if not exist .\\plugins\\wasm (
 * 启动规则     POST   http://localhost:9081/rules/{id}/start
 * 停止规则     POST   http://localhost:9081/rules/{id}/stop
 * 重启规则     POST   http://localhost:9081/rules/{id}/restart
+
+#### 数据聚合规则管理
+
+```java
+  sql = "SELECT ${aggregate_type}(value) FROM ${source} "
+                + "GROUP BY HOPPINGWINDOW(ss, ${window_time}, ${trigger_cycle}) "
+                + " FILTER(WHERE devCode = \\\"${asset_code}\\\" AND metric = \\\"${index_code}\\\")"
+```
+
+参数绑定
+- aggregate_type 聚合函数名称
+- source         数据源名称
+- window_time    时间窗口大小 单位：秒
+- trigger_cycle  触发周期     单位：秒
+- asset_code     资产编码
+- index_code     指标编码
+
+
+#### 数据清洗规则管理
+* `越限`     处理方式: 删除 或 补点, 补点规则见备注
+  - 1. 点的值大于或小于 `指定值`;            
+* `跳变`     处理方式: 删除 或 补点, 补点规则见备注
+  - 1. 连续两个点的`差的绝对值` `大于或小于` `阈值` 
+  - 2. 连续两个点的`斜率` (`差的绝对值` / fabs(A点时间戳 - B点时间戳)) `大于或小于` `阈值` 
+* `死值`     处理方式: 删除 或 补点, 补点规则见备注
+  - 1. 连续多长时间 `值不变`; 
+  - 2. 连续多少个点 `值不变`; 
+  - 3. ~~连续多少个点 `值不变` 或 连续多长时间 `值不变`~~; 
+  - 4. ~~连续多少个点 `值不变` 且 连续多长时间 `值不变`~~;  
+* `时间过滤`  处理方式: 删除 或 补点, 补点规则见备注
+  - 1. 事件发生事件为基准, `在`指定时间范围;  
+  - 2. 事件发生事件为基准, `不在`指定时间范围, 时间范围格式为`unix时间戳`  
+
+
+> 补点规则
+> 1. 补前一个点
+> 2. 补前一段点的平均值 - 可能是补一段时间内的点平均值 或 一批数量的平均值  待定
+
+> 周新桐说`直接打标签 不补点`
+
+##### 越限
+
+```java
+ sql = "SELECT time, devCode, metric, value "
+    + "FROM ${source} " 
+    + "WHERE devCode = \\\"${asset_code}\\\" "
+    +            "AND metric = \\\"${index_code}\\\" "
+    +            "AND {rule}"
+```
+
+
+- rule :  value ${than_operator} ${threshold}) ;  
+  - than_operator 比较符号 `>` `<`
+  - threshold 阈值
+
+##### 跳变
+
+###### 连续两个点的`差的绝对值`
+
+```java
+sql = "SELECT time, devCode, metric, abs(last_value(value) - first_value(value)) AS jumpVal "
+     + "FROM ${source}  "
+     + "GROUP BY COUNTWINDOW(ss, 2, 1) " 
+     + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
+    +            "AND metric = \\\"${index_code}\\\"  )"
+```
+
+
+
+###### 连续两个点的`斜率`
+
+```java
+sql = "SELECT time, devCode, metric, abs(last(value) - first(value)) / abs( (last_value(time) - first_value(time) ) / 1000 ) AS jumpVal "
+     + "FROM ${source}  "
+     + "GROUP BY COUNTWINDOW(ss, 2, 1) " 
+     + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
+    +            "AND metric = \\\"${index_code}\\\"  )"
+```
+
+
+##### 死值
+
+###### 连续多长时间 `值不变`
+
+```java
+sql = "SELECT time, devCode, metric, value, "
+     +       " CASE value WHEN max(value) - min(value) = 0 then 1 else 0 end AS deathVal "
+     + "FROM ${source}  "
+     + "GROUP BY SLIDINGWINDOW(ss, ${window_time}) " 
+     + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
+    +            "AND metric = \\\"${index_code}\\\"  )"
+```
+
+###### 连续多少个点 `值不变`
+
+```java
+sql = "SELECT time, devCode, metric, value, "
+     +       " CASE value WHEN max(value) - min(value) = 0 then 1 else 0 end AS deathVal "
+     + "FROM ${source}  "
+     + "GROUP BY COUNTWINDOW(ss, ${window_count}, 1) " 
+     + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
+    +            "AND metric = \\\"${index_code}\\\"  )"
+```
+
+###### ~~连续多少个点 `值不变` 或 连续多长时间 `值不变`~~
+
+**无需实现**
+
+###### ~~连续多少个点 `值不变` 且 连续多长时间 `值不变`~~
+
+**无需实现**
+
+##### 时间过滤
+
+###### `在`指定时间范围
+
+```java
+ sql = "SELECT time, devCode, metric, value "
+    + "FROM ${source} " 
+    + "WHERE devCode = \\\"${asset_code}\\\" "
+    +            "AND metric = \\\"${index_code}\\\" "
+    +            "AND {rule}"
+```
+
+- rule :  x_timestamp_in_duration(time, ${start}, ${end}) ;  
+  - start 开始时间 120000 int型 表示 12点整
+  - end   结束时间 123010 int型 表示 12点10分
+
+> `x_from_timestamp` 自定义函数, 将10位精确到s的时间戳 或 13位精确到ms的时间戳转换位date类型
+
+###### `不在`指定时间范围
+
+```java
+ sql = "SELECT time, devCode, metric, value "
+    + "FROM ${source} " 
+    + "WHERE devCode = \\\"${asset_code}\\\" "
+    +            "AND metric = \\\"${index_code}\\\" "
+    +            "AND NOT {rule}"
+```
+
+- rule :  x_timestamp_in_duration(time, ${start}, ${end}) ;  
+  - start 开始时间 120000 int型 表示 12点整
+  - end   结束时间 123010 int型 表示 12点10分

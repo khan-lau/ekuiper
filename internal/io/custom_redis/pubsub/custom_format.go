@@ -11,11 +11,11 @@ import (
 )
 
 type RedisFormat struct {
-	DevCode  string  `json:"devCode"`
-	Metric   string  `json:"metric"`
-	DataType string  `json:"dataType"`
-	Value    float64 `json:"value"`
-	Time     int64   `json:"time"`
+	DevCode  string  `json:"devCode"`  // 设备代码
+	Metric   string  `json:"metric"`   // 指标
+	DataType string  `json:"dataType"` // 数据类型
+	Value    float64 `json:"value"`    // 值
+	Time     int64   `json:"time"`     // 时间戳
 }
 
 func (x *RedisFormat) GetSchemaJson() string {
@@ -113,9 +113,16 @@ func (x *RedisFormat) Decode(b []byte) (interface{}, error) {
 			decodeError = fmt.Errorf("invalid message format: %v", part)
 			continue
 		}
+
+		// 时间戳的精度提升到ms
 		if timestamp < 10000000000 {
 			timestamp *= 1000
 		}
+
+		// // 时间戳的精度降到s
+		// if timestamp > 9999999999 {
+		// 	timestamp /= 1000
+		// }
 
 		rm := mapPool.Get().(map[string]interface{}) // 从Pool中获取一个map
 		rm["DevCode"] = devCode

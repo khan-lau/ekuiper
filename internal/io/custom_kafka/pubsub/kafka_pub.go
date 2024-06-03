@@ -108,13 +108,18 @@ func (m *kafkaPub) Open(ctx api.StreamContext) error {
 	return nil
 }
 
+// 收到待发送的数据
+//   - @param ctx 上下文
+//   - @param item 待发送的数据
 func (m *kafkaPub) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
 	logger.Debugf("kafka sink receive %s", item)
 	var messages []kafkago.Message
+
 	switch d := item.(type) {
-	case []map[string]interface{}:
+	case []map[string]interface{}: //如果是map数组, 这两种类型由rule.option 的 sendSingle 属性控制
 		for _, msg := range d {
+			// 解析slink收到的内容, 编码为[]byte
 			decodedBytes, _, err := ctx.TransformOutput(msg)
 			if err != nil {
 				return fmt.Errorf("kafka sink transform data error: %v", err)
@@ -126,7 +131,7 @@ func (m *kafkaPub) Collect(ctx api.StreamContext, item interface{}) error {
 			}
 			messages = append(messages, kafkaMsg)
 		}
-	case map[string]interface{}:
+	case map[string]interface{}: // 如果是map
 		decodedBytes, _, err := ctx.TransformOutput(d)
 		if err != nil {
 			return fmt.Errorf("kafka sink transform data error: %v", err)
@@ -140,7 +145,8 @@ func (m *kafkaPub) Collect(ctx api.StreamContext, item interface{}) error {
 	default:
 		return fmt.Errorf("unrecognized format of %s", item)
 	}
-	err := m.writer.WriteMessages(ctx, messages...)
+
+	err := m.writer.WriteMessages(ctx, messages...) // publish 消息到kafka
 	if err != nil {
 		conf.Log.Errorf("kafka sink error: %v", err)
 	} else {
@@ -149,7 +155,7 @@ func (m *kafkaPub) Collect(ctx api.StreamContext, item interface{}) error {
 	switch err := err.(type) {
 	case kafkago.Error:
 		if err.Temporary() {
-			return fmt.Errorf(`%s: kafka sink fails to send out the data . %v`, errorx.IOErr, err)
+			return fmt.Errorf(`%d: kafka sink fails to send out the data . %v`, errorx.IOErr, err)
 		} else {
 			return err
 		}
@@ -167,19 +173,19 @@ func (m *kafkaPub) Collect(ctx api.StreamContext, item interface{}) error {
 				}
 			default:
 				if strings.Contains(err.Error(), "kafka.(*Client).Produce:") {
-					return fmt.Errorf(`%s: kafka sink fails to send out the data . %v`, errorx.IOErr, err)
+					return fmt.Errorf(`%d: kafka sink fails to send out the data . %v`, errorx.IOErr, err)
 				}
 			}
 		}
 		if count > 0 {
-			return fmt.Errorf(`%s: kafka sink fails to send out the data . %v`, errorx.IOErr, err)
+			return fmt.Errorf(`%d: kafka sink fails to send out the data . %v`, errorx.IOErr, err)
 		} else {
 			return err
 		}
 	case nil:
 		return nil
 	default:
-		return fmt.Errorf(`%s: kafka sink fails to send out the data: %v`, errorx.IOErr, err)
+		return fmt.Errorf(`%d: kafka sink fails to send out the data: %v`, errorx.IOErr, err)
 	}
 }
 

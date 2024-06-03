@@ -295,6 +295,7 @@ func registerDateTimeFunc() {
 		},
 		check: returnNilIfHasAnyNil,
 	}
+
 	builtins["hour"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
@@ -440,6 +441,131 @@ func registerDateTimeFunc() {
 			}
 			return nil
 		},
+	}
+
+	builtins["x_from_timestamp"] = builtinFunc{ // 自定义函数, 将10位精确到s的时间戳 或 13位精确到ms的时间戳转换位date类型
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			seconds, err := cast.ToInt(args[0], cast.STRICT)
+			if err != nil {
+				return err, false
+			}
+
+			if seconds == 0 {
+				return nil, true
+			}
+
+			var t time.Time
+			if seconds <= 9999999999 { // 10位时间戳, 精确到s
+				t = time.Unix(int64(seconds), 0).In(cast.GetConfiguredTimeZone())
+			} else { // 13位时间戳, 精确到ms
+				t = time.Unix(0, int64(seconds)).In(cast.GetConfiguredTimeZone())
+			}
+
+			result, err := cast.FormatTime(t, "yyyy-MM-dd HH:mm:ss")
+			if err != nil {
+				return err, false
+			}
+			return result, true
+
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			if err := ValidateLen(1, len(args)); err != nil {
+				return err
+			}
+			if ast.IsNumericArg(args[0]) || ast.IsStringArg(args[0]) || ast.IsBooleanArg(args[0]) {
+				return ProduceErrInfo(0, "int")
+			}
+			return nil
+		},
+		check: returnNilIfHasAnyNil,
+	}
+
+	// `自定义函数`: 判断时间是否在时间段内, 判断条件左开右开
+	//
+	// x_at_duration(timestamp, start, end)
+	//  - timestamp: 时间戳, 10位精确到s的时间戳 或 13位精确到ms的时间戳
+	//  - start: 开始时间 120000 int型 表示 12点整
+	//  - end: 结束时间 123010 int型 表示 12点10分
+	builtins["x_timestamp_in_duration"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			seconds, err := cast.ToInt(args[0], cast.STRICT)
+			if err != nil {
+				return err, false
+			}
+
+			if seconds == 0 {
+				return nil, true
+			}
+
+			var t time.Time
+			if seconds <= 9999999999 { // 10位时间戳, 精确到s
+				t = time.Unix(int64(seconds), 0).In(cast.GetConfiguredTimeZone())
+			} else { // 13位时间戳, 精确到ms
+				t = time.Unix(0, int64(seconds)).In(cast.GetConfiguredTimeZone())
+			}
+
+			paramStart, err := cast.ToInt(args[1], cast.STRICT)
+			if err != nil {
+				return err, false
+			}
+			startHour := paramStart / 10000
+			startMinute := (paramStart % 10000) / 100
+			startSecond := paramStart % 100
+
+			if startHour < 0 || startHour > 23 || startMinute < 0 || startMinute > 59 || startSecond < 0 || startSecond > 59 {
+				return errors.New("invalid start time"), false
+			}
+
+			paramEnd, err := cast.ToInt(args[1], cast.STRICT)
+			if err != nil {
+				return err, false
+			}
+			endHour := paramEnd / 10000
+			endMinute := (paramEnd % 10000) / 100
+			endSecond := paramEnd % 100
+
+			if endHour < 0 || endHour > 23 || endMinute < 0 || endMinute > 59 || endSecond < 0 || endSecond > 59 {
+				return errors.New("invalid end time"), false
+			}
+
+			if endHour < startHour || (endHour == startHour && endMinute < startMinute) || (endHour == startHour && endMinute == startMinute && endSecond < startSecond) {
+				return errors.New("end time must be later than start time"), false
+			}
+
+			result := false
+			if (t.Local().Hour() >= startHour && t.Local().Hour() <= endHour) &&
+				(t.Local().Minute() >= startMinute && t.Local().Minute() <= endMinute) &&
+				(t.Local().Second() >= startSecond && t.Local().Second() <= endSecond) {
+
+				result = true
+			}
+
+			return result, true
+		},
+
+		// 参数检查入口
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			if err := ValidateLen(3, len(args)); err != nil { // 检查参数数量
+				return err
+			}
+			if ast.IsNumericArg(args[0]) || ast.IsStringArg(args[0]) || ast.IsBooleanArg(args[0]) { // 第一个参数 int
+				return ProduceErrInfo(0, "int")
+			}
+
+			if ast.IsNumericArg(args[1]) || ast.IsStringArg(args[1]) || ast.IsBooleanArg(args[1]) { // 第2个参数 string "08:00:00"
+				return ProduceErrInfo(1, "int, example - 80000") // 代表 08:00:00
+			}
+
+			if ast.IsNumericArg(args[2]) || ast.IsStringArg(args[2]) || ast.IsBooleanArg(args[2]) { // 第2个参数 string "08:30:00"
+				return ProduceErrInfo(2, "int, example - 83000") // 代表 08:30:00
+			}
+			return nil
+		},
+
+		check: returnNilIfHasAnyNil,
 	}
 }
 
