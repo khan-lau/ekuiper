@@ -25,6 +25,7 @@ plugins/functions/*
 _book
 node_modules/
 
+dist
 _build
 _packages
 _plugins

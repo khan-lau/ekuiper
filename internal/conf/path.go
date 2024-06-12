@@ -115,7 +115,7 @@ func relativePath(subdir string) (string, error) {
 	}
 
 	if base := os.Getenv(KuiperBaseKey); base != "" {
-		Log.Infof("Specified Kuiper base folder at location %s.\n", base)
+		Log.Infof("Specified Kuiper base folder at location %s.", base)
 		dir = base
 	}
 	confDir := filepath.Join(dir, subdir)

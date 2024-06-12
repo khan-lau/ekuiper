@@ -5,7 +5,7 @@
 2. 调试平台为 `windows` `mingw64` `gcc 11.2.0`
 3. ekuiper 最低要求的 golang 版本为 `1.21.0`
 4. ekuiper 1.13.3 的代码不能直接在windows mingw64下执行, 严格来讲是不能在windows下执行, 需要修改几处源码才可以, 见备注:
-
+5. make 脚本需要运行于 mingw64 bash下, `make` 编译, `make run` 运行
 
 备注:
 > 需要修改的部分
@@ -165,7 +165,7 @@ if not exist .\\plugins\\wasm (
 > ```
 
 
-### 规则管理
+### ekuiper规则管理restful api
 
 * 检查规则     POST   http://localhost:9081/rules/validate
 * 新增规则     POST   http://localhost:9081/rules
@@ -228,9 +228,9 @@ if not exist .\\plugins\\wasm (
 ```
 
 
-- rule :  value ${than_operator} ${threshold}) ;  
-  - than_operator 比较符号 `>` `<`
-  - threshold 阈值
+- `rule` :  value ${than_operator} ${threshold} ;  
+  - `than_operator` 比较符号 `>` `<`
+  - `threshold` 阈值
 
 ##### 跳变
 
@@ -241,9 +241,13 @@ sql = "SELECT time, devCode, metric, abs(last_value(value) - first_value(value))
      + "FROM ${source}  "
      + "GROUP BY COUNTWINDOW(ss, 2, 1) " 
      + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
-    +            "AND metric = \\\"${index_code}\\\"  )"
+    +            "AND metric = \\\"${index_code}\\\" "
+    +            "AND ${rule} )"
 ```
 
+- `rule` :  jumpVal ${than_operator} ${threshold} ;  
+  - `than_operator` 比较符号 `>` `<`
+  - `threshold` 阈值
 
 
 ###### 连续两个点的`斜率`
@@ -253,9 +257,13 @@ sql = "SELECT time, devCode, metric, abs(last(value) - first(value)) / abs( (las
      + "FROM ${source}  "
      + "GROUP BY COUNTWINDOW(ss, 2, 1) " 
      + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
-    +            "AND metric = \\\"${index_code}\\\"  )"
+    +            "AND metric = \\\"${index_code}\\\" "
+    +            "AND ${rule} )"
 ```
 
+- `rule` :  jumpVal ${than_operator} ${threshold} ;  
+  - `than_operator` 比较符号 `>` `<`
+  - `threshold` 阈值
 
 ##### 死值
 
@@ -301,9 +309,9 @@ sql = "SELECT time, devCode, metric, value, "
     +            "AND {rule}"
 ```
 
-- rule :  x_timestamp_in_duration(time, ${start}, ${end}) ;  
-  - start 开始时间 120000 int型 表示 12点整
-  - end   结束时间 123010 int型 表示 12点10分
+- `rule` :  x_timestamp_in_duration(time, ${start}, ${end}) ;  
+  - `start` 开始时间 120000 int型 表示 12点整
+  - `end`   结束时间 123010 int型 表示 12点10分
 
 > `x_from_timestamp` 自定义函数, 将10位精确到s的时间戳 或 13位精确到ms的时间戳转换位date类型
 
@@ -317,6 +325,6 @@ sql = "SELECT time, devCode, metric, value, "
     +            "AND NOT {rule}"
 ```
 
-- rule :  x_timestamp_in_duration(time, ${start}, ${end}) ;  
-  - start 开始时间 120000 int型 表示 12点整
-  - end   结束时间 123010 int型 表示 12点10分
+- `rule` :  x_timestamp_in_duration(time, ${start}, ${end}) ;  
+  - `start` 开始时间 120000 int型 表示 12点整
+  - `end`   结束时间 123010 int型 表示 12点10分

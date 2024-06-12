@@ -42,6 +42,7 @@ func InitLogger() {
 	filenameHook := filename.NewHook()
 	filenameHook.Field = "file"
 	Log.AddHook(filenameHook)
+	// Log.SetReportCaller(true)
 
 	Log.SetFormatter(&logrus.TextFormatter{
 		DisableColors: true,
