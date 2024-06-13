@@ -35,14 +35,14 @@ ifeq ($(uname_S), Windows)
 endif
 
 ifeq ($(uname_S), Linux)
-	@export GO111MODULE=on; export CGO_ENABLED=0; export GOOS=windows; export GOARCH=amd64; go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper.exe cmd/kuiper/main.go
-	@export GO111MODULE=on; export CGO_ENABLED=1; export GOOS=windows; export GOARCH=amd64; go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd.exe cmd/kuiperd/main.go
+	@export GO111MODULE=on; export CGO_ENABLED=0; export GOOS=windows; export GOARCH=amd64; export CC=x86_64-w64-mingw32-gcc; go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper.exe cmd/kuiper/main.go
+	@export GO111MODULE=on; export CGO_ENABLED=1; export GOOS=windows; export GOARCH=amd64; export CC=x86_64-w64-mingw32-gcc; go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd.exe cmd/kuiperd/main.go
 
-	@export GO111MODULE=on; export CGO_ENABLED=0; export GOOS=linux; export GOARCH=amd64; go   build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper cmd/kuiper/main.go
-	@export GO111MODULE=on; export CGO_ENABLED=1; export GOOS=linux; export GOARCH=amd64; go   build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd cmd/kuiperd/main.go
+	@export GO111MODULE=on; export CGO_ENABLED=0; export GOOS=linux; export GOARCH=amd64; export CC=x86_64-linux-gnu-gcc; go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper cmd/kuiper/main.go
+	@export GO111MODULE=on; export CGO_ENABLED=1; export GOOS=linux; export GOARCH=amd64; export CC=x86_64-linux-gnu-gcc; go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd cmd/kuiperd/main.go
 
-	@export GO111MODULE=on; export CGO_ENABLED=0; export GOOS=linux; export GOARCH=arm64; go   build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper.arm64 cmd/kuiper/main.go
-	@export GO111MODULE=on; export CGO_ENABLED=1; export GOOS=linux; export GOARCH=arm64; go   build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd.arm64 cmd/kuiperd/main.go
+	@export GO111MODULE=on; export CGO_ENABLED=0; export GOOS=linux; export GOARCH=arm64; export CC=aarch64-linux-gnu-gcc; go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper.arm64 cmd/kuiper/main.go
+	@export GO111MODULE=on; export CGO_ENABLED=1; export GOOS=linux; export GOARCH=arm64; export CC=aarch64-linux-gnu-gcc; go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd.arm64 cmd/kuiperd/main.go
 endif
 
 build_prepare:
