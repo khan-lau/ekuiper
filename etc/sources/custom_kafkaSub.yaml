@@ -1,5 +1,5 @@
 default:
-  brokers: "192.168.20.15:9092"
+  brokers: "10.50.145.3:9092"
   groupID: "groupId"
   partition: 0
   maxBytes: 1000000

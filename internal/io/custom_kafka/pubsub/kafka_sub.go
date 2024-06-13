@@ -8,11 +8,12 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/io"
 	"github.com/lf-edge/ekuiper/internal/io/custom_kafka"
 	"github.com/lf-edge/ekuiper/internal/pkg/cert"
-	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	kafkago "github.com/segmentio/kafka-go"
 )
 
@@ -135,19 +136,40 @@ func (s *kafkaSub) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, 
 			return
 		}
 		s.offset = msg.Offset
-		dataList, err := ctx.DecodeIntoList(msg.Value)
-		if err != nil {
-			logger.Errorf("unmarshal kafka message value err: %v", err)
-			consumer <- &xsql.ErrorSourceTuple{
-				Error: fmt.Errorf("can not decompress kafka message %v.", err),
-			}
-			// errCh <- err
+
+		// dataList, err := ctx.DecodeIntoList(msg.Value)
+		// if err != nil {
+		// 	logger.Errorf("unmarshal kafka message value err: %v", err)
+		// 	consumer <- &xsql.ErrorSourceTuple{
+		// 		Error: fmt.Errorf("can not decompress kafka message %v.", err),
+		// 	}
+		// 	// errCh <- err
+		// 	return
+		// }
+		// for _, data := range dataList {
+		// 	rcvTime := conf.GetNow()
+		// 	consumer <- api.NewDefaultSourceTupleWithTime(data, nil, rcvTime)
+		// }
+
+		// built-in decode
+		payload := msg.Value
+		kafkaFormat := GetKafkaFormat().(message.Converter)
+		resultsAny, err := kafkaFormat.Decode(payload)
+		if resultsAny == nil || err != nil {
 			return
 		}
-		for _, data := range dataList {
+		results := resultsAny.([]map[string]interface{}) // 一次返回多条记录, 所以此处是一个map数组
+
+		meta := make(map[string]interface{})
+		meta["key"] = msg.Key
+		meta["channel"] = msg.Topic
+
+		tuples := make([]api.SourceTuple, 0, len(results))
+		for _, result := range results {
 			rcvTime := conf.GetNow()
-			consumer <- api.NewDefaultSourceTupleWithTime(data, nil, rcvTime)
+			tuples = append(tuples, api.NewDefaultSourceTupleWithTime(result, meta, rcvTime))
 		}
+		io.ReceiveTuples(ctx, consumer, tuples)
 	}
 }
 

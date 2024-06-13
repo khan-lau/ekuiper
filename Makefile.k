@@ -32,13 +32,6 @@ build:
 ifeq ($(uname_S), Windows)
 	@cmd /C 'set GO111MODULE=on&&set CGO_ENABLED=0&&set GOOS=windows&&set GOARCH=amd64&&go build -trimpath -ldflags='-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative' -o $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper.exe cmd/kuiper/main.go'
 	@cmd /C 'set GO111MODULE=on&&set CGO_ENABLED=1&&set GOOS=windows&&set GOARCH=amd64&&go build -trimpath -ldflags='-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative' -o $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd.exe cmd/kuiperd/main.go'
-
-	@cmd /C 'set GO111MODULE=on&&set CGO_ENABLED=0&&set GOOS=linux&&set GOARCH=amd64&&go   build -trimpath -ldflags='-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative' -o $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper cmd/kuiper/main.go'
-	@cmd /C 'set GO111MODULE=on&&set CGO_ENABLED=1&&set GOOS=linux&&set GOARCH=amd64&&go   build -trimpath -ldflags='-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative' -o $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd cmd/kuiperd/main.go'
-
-	@cmd /C 'set GO111MODULE=on&&set CGO_ENABLED=0&&set GOOS=linux&&set GOARCH=arm64&&go   build -trimpath -ldflags='-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative' -o $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiper.arm64 cmd/kuiper/main.go'
-	@cmd /C 'set GO111MODULE=on&&set CGO_ENABLED=1&&set GOOS=linux&&set GOARCH=arm64&&go   build -trimpath -ldflags='-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative' -o $(BUILD_PATH)/$(PACKAGE_NAME)/bin/kuiperd.arm64 cmd/kuiperd/main.go'
-
 endif
 
 ifeq ($(uname_S), Linux)

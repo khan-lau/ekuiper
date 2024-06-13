@@ -1,6 +1,6 @@
 default:
-  address: 127.0.0.1:16379
+  address: 10.50.145.4:16379
   db: 0
   password: WuTz@DtXyTeCh.com
-  channels: ['sim_data', 'aa']
+  channels: ['sim_data']
   decompression: zlib

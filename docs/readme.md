@@ -146,10 +146,12 @@ if not exist .\\plugins\\wasm (
   - 1.1 新增 `custom_redis` 内置 sink
   - 1.2 新增 `custom_redis` 内置 source
   - 1.3 新增 `custom_redisPub` 内置 sink
-  - 1.4 新增 `custom_redisSub` 内置 source , 经过该source的 `time时间戳字段` `精确到ms`
+  - 1.4 新增 `custom_redisSub` 内置 source, 经过该source的 `time时间戳字段` `精确到ms`
   - 1.5 新增 `聚合函数` `first_value(col, ignoreNull = true)`
   - 1.6 新增 `日期时间函数` `x_timestamp_in_duration(timestamp, start, end)`
   - 1.7 新增 `日期时间函数` `x_from_timestamp(timestamp)`
+  - 1.8 新增 `custom_kafkaPub` 内置 sink
+  - 1.9 新增 `custom_kafkaSub` 内置 source, 经过该source的 `time时间戳字段` `精确到ms`
 2. `custom_redisSub` 处理后的数据格式 见备注
 
 
@@ -163,6 +165,12 @@ if not exist .\\plugins\\wasm (
 >     "value":    23.001               // 数据
 >   }
 > ```
+
+备注:
+> 1. custom_redisSub 接收的数据为 `fieldVal1@type:field2Val@type:cc@field3Val@type` 这样的`:`分割的记录结构; 多条记录之间用`,`分割; `@`分割字段和类型, 可选
+> 2. custom_kafkaSub 接收的数据同上
+>
+> 综上, 字段值和为字符串类型时只可以使用 `[a-zA-Z0-9\_]`表述, 为数值时可以使用 `[0-9\.]`表述
 
 
 ### ekuiper规则管理restful api
