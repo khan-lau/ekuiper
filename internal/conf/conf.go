@@ -25,8 +25,9 @@ import (
 	"strings"
 	"time"
 
-	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
+	// rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/sirupsen/logrus"
+	rotatelogs "github.com/yisaer/file-rotatelogs"
 
 	"github.com/lf-edge/ekuiper/internal/conf/logger"
 	"github.com/lf-edge/ekuiper/pkg/api"
