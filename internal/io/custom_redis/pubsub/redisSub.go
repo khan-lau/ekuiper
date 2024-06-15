@@ -88,7 +88,7 @@ func (r *redisSub) Configure(_ string, props map[string]interface{}) error {
 
 func (r *redisSub) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
 	logger := ctx.GetLogger()
-	logger.Infof("redisSub sink Opening")
+	logger.Infof("redisSub source Opening")
 	err := subscribe(r, ctx, consumer)
 	if err != nil {
 		infra.DrainError(ctx, err, errCh)

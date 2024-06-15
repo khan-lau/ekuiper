@@ -33,7 +33,7 @@ type pprofComp struct {
 
 func (p pprofComp) serve() {
 	go func() {
-		if err := http.ListenAndServe(":6060", nil); err != nil {
+		if err := http.ListenAndServe(":16060", nil); err != nil {
 			log.Fatal(err)
 		}
 		os.Exit(0)
