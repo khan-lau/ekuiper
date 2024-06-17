@@ -40,14 +40,26 @@ func (c *kafkaSourceConf) validate() error {
 }
 
 func (c *kafkaSourceConf) GetReaderConfig(topic string) kafkago.ReaderConfig {
-	return kafkago.ReaderConfig{
-		Brokers:     strings.Split(c.Brokers, ","),
-		GroupID:     c.GroupID,
-		Topic:       topic,
-		Partition:   c.Partition,
-		MaxBytes:    c.MaxBytes,
-		MaxAttempts: c.MaxAttempts,
+	conf.Log.Infof("kafka source conf: %v", c)
+	if c.GroupID == "" {
+		return kafkago.ReaderConfig{
+			Brokers:     strings.Split(c.Brokers, ","),
+			Topic:       topic,
+			Partition:   c.Partition,
+			MaxBytes:    c.MaxBytes,
+			MaxAttempts: c.MaxAttempts,
+		}
+	} else {
+		return kafkago.ReaderConfig{
+			Brokers:     strings.Split(c.Brokers, ","),
+			GroupID:     c.GroupID,
+			Topic:       topic,
+			Partition:   c.Partition,
+			MaxBytes:    c.MaxBytes,
+			MaxAttempts: c.MaxAttempts,
+		}
 	}
+
 }
 
 func getSourceConf(props map[string]interface{}) (*kafkaSourceConf, error) {
