@@ -117,14 +117,45 @@ func (m *kafkaPub) Collect(ctx api.StreamContext, item interface{}) error {
 	var messages []kafkago.Message
 
 	switch d := item.(type) {
-	case []map[string]interface{}: //如果是map数组, 这两种类型由rule.option 的 sendSingle 属性控制
+	case []byte:
+		var trandatas []map[string]interface{}
+		if err := json.Unmarshal(d, &trandatas); err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		kafkaMessage := KafkaSinkMessage{}
 		for _, msg := range d {
-			// 解析slink收到的内容, 编码为[]byte
-			decodedBytes, _, err := ctx.TransformOutput(msg)
+			encode, err := kafkaMessage.Encode(msg)
 			if err != nil {
-				return fmt.Errorf("kafka sink transform data error: %v", err)
+				logger.Error(err)
+				continue
 			}
-			kafkaMsg, err := m.buildMsg(ctx, msg, decodedBytes)
+			kafkaMsg, err := m.buildMsg(ctx, msg, []byte(encode))
+
+			if err != nil {
+				conf.Log.Errorf("build kafka msg failed, err:%v", err)
+				return err
+			}
+			messages = append(messages, kafkaMsg)
+		}
+
+	case []map[string]interface{}: //如果是map数组, 这两种类型由rule.option 的 sendSingle 属性控制
+		kafkaMessage := KafkaSinkMessage{}
+		for _, msg := range d {
+			encode, err := kafkaMessage.Encode(msg)
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
+			kafkaMsg, err := m.buildMsg(ctx, msg, []byte(encode))
+
+			// // 解析slink收到的内容, 编码为[]byte
+			// decodedBytes, _, err := ctx.TransformOutput(msg)
+			// if err != nil {
+			// 	return fmt.Errorf("kafka sink transform data error: %v", err)
+			// }
+			// kafkaMsg, err := m.buildMsg(ctx, msg, decodedBytes)
 			if err != nil {
 				conf.Log.Errorf("build kafka msg failed, err:%v", err)
 				return err
@@ -132,16 +163,24 @@ func (m *kafkaPub) Collect(ctx api.StreamContext, item interface{}) error {
 			messages = append(messages, kafkaMsg)
 		}
 	case map[string]interface{}: // 如果是map
-		decodedBytes, _, err := ctx.TransformOutput(d)
+		kafkaMessage := KafkaSinkMessage{}
+		encode, err := kafkaMessage.Encode(d)
 		if err != nil {
+			logger.Error(err)
 			return fmt.Errorf("kafka sink transform data error: %v", err)
 		}
-		msg, err := m.buildMsg(ctx, item, decodedBytes)
+
+		kafkaMsg, err := m.buildMsg(ctx, d, []byte(encode))
+		// decodedBytes, _, err := ctx.TransformOutput(d)
+		// if err != nil {
+		// 	return fmt.Errorf("kafka sink transform data error: %v", err)
+		// }
+		// msg, err := m.buildMsg(ctx, item, decodedBytes)
 		if err != nil {
 			conf.Log.Errorf("build kafka msg failed, err:%v", err)
 			return err
 		}
-		messages = append(messages, msg)
+		messages = append(messages, kafkaMsg)
 	default:
 		return fmt.Errorf("unrecognized format of %s", item)
 	}
@@ -152,6 +191,7 @@ func (m *kafkaPub) Collect(ctx api.StreamContext, item interface{}) error {
 	} else {
 		conf.Log.Debug("sink kafka success")
 	}
+
 	switch err := err.(type) {
 	case kafkago.Error:
 		if err.Temporary() {

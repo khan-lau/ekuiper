@@ -118,10 +118,11 @@ func (r *redisPub) collectWithChannel(ctx api.StreamContext, item interface{}, c
 	logger := ctx.GetLogger()
 	logger.Infof("receive %+v", item)
 
-	if v, ok := item.([]byte); ok {
+	switch d := item.(type) {
+	case []byte:
 		var trandatas []map[string]interface{}
 		r.mux.Lock()
-		if err := json.Unmarshal(v, &trandatas); err != nil {
+		if err := json.Unmarshal(d, &trandatas); err != nil {
 			logger.Error(err)
 			return err
 		}
@@ -136,15 +137,29 @@ func (r *redisPub) collectWithChannel(ctx api.StreamContext, item interface{}, c
 			r.results = append(r.results, string(encode))
 		}
 		r.mux.Unlock()
-	} else if v, ok := item.(map[string]interface{}); ok {
+	case []map[string]interface{}:
 		redisMessage := RedisSinkMessage{}
 		r.mux.Lock()
-		encode, err := redisMessage.Encode(v)
+		for _, trandata := range d {
+			encode, err := redisMessage.Encode(trandata)
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
+			r.results = append(r.results, string(encode))
+		}
+		r.mux.Unlock()
+	case map[string]interface{}:
+		redisMessage := RedisSinkMessage{}
+		r.mux.Lock()
+		encode, err := redisMessage.Encode(d)
 		if err != nil {
 			logger.Error(err)
 		}
 		r.results = append(r.results, string(encode))
 		r.mux.Unlock()
+	default:
+		return fmt.Errorf("unrecognized format of %s", item)
 	}
 
 	if len(r.results) > 0 {
@@ -158,26 +173,6 @@ func (r *redisPub) collectWithChannel(ctx api.StreamContext, item interface{}, c
 		logger.Error("file sink receive non byte data")
 	}
 
-	// // Transform
-	// jsonBytes, _, err := ctx.TransformOutput(item)
-	// if err != nil {
-	// 	logger.Errorf("Error occurred while transforming the Redis message: %v", err)
-	// 	return err
-	// }
-	// logger.Debugf("%s publish %s", ctx.GetOpId(), jsonBytes)
-
-	// // Compress
-	// if r.compressor != nil {
-	// 	jsonBytes, err = r.compressor.Compress(jsonBytes)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
-	// // Publish
-	// err = r.conn.Publish(ctx, channel, jsonBytes).Err()
-	// if err != nil {
-	// 	return errorx.NewIOErr(fmt.Sprintf(`Error occurred while publishing the Redis message to %s`, r.conf.Address))
-	// }
 	return nil
 }
 
@@ -185,7 +180,7 @@ func (r *redisPub) PublishgRedisWithMsg(ctx api.StreamContext, message []string,
 	msgList := strings.Join(message, ",")
 
 	logger := ctx.GetLogger()
-	logger.Infof("redisPub sink publish %s", msgList)
+	logger.Debugf("redisPub sink publish %s", msgList)
 
 	buf := new(bytes.Buffer)
 	writer := zlib.NewWriter(buf)

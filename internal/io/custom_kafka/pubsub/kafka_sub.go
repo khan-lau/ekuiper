@@ -153,7 +153,7 @@ func (s *kafkaSub) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, 
 
 		// built-in decode
 		payload := msg.Value
-		kafkaFormat := GetKafkaFormat().(message.Converter)
+		kafkaFormat := GetKafkaSourceMessage().(message.Converter)
 		resultsAny, err := kafkaFormat.Decode(payload)
 		if resultsAny == nil || err != nil {
 			return

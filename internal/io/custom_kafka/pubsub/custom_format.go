@@ -7,10 +7,12 @@ import (
 	"sync"
 	"unsafe"
 
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/mitchellh/mapstructure"
 )
 
-type KafkaFormat struct {
+type KafkaSourceMessage struct {
+	Action   string  `json:"action"`   // 扩展指令
 	DevCode  string  `json:"devCode"`  // 设备代码
 	Metric   string  `json:"metric"`   // 指标
 	DataType string  `json:"dataType"` // 数据类型
@@ -18,9 +20,10 @@ type KafkaFormat struct {
 	Time     int64   `json:"time"`     // 时间戳
 }
 
-func (x *KafkaFormat) GetSchemaJson() string {
+func (that *KafkaSourceMessage) GetSchemaJson() string {
 	// return a static schema
 	return `{
+		"Action": {"type": "string"},
 		"DevCode": {"type": "string"},
 		"Metric": {"type": "string"},
 		"DataType": {"type": "string"},
@@ -29,15 +32,15 @@ func (x *KafkaFormat) GetSchemaJson() string {
 	}`
 }
 
-func (x *KafkaFormat) Encode(d interface{}) ([]byte, error) {
+func (that *KafkaSourceMessage) Encode(d interface{}) ([]byte, error) {
 	var builder strings.Builder
 
 	switch dt := d.(type) {
 	case map[string]interface{}:
-		return x.encodeSingleMap(dt)
+		return that.encodeSingleMap(dt)
 	case []map[string]interface{}:
 		for i, item := range dt {
-			encoded, err := x.encodeSingleMap(item)
+			encoded, err := that.encodeSingleMap(item)
 			if err != nil {
 				return nil, err
 			}
@@ -52,17 +55,17 @@ func (x *KafkaFormat) Encode(d interface{}) ([]byte, error) {
 	}
 }
 
-func (x *KafkaFormat) encodeSingleMap(item map[string]interface{}) ([]byte, error) {
-	err := MapToStructStrict(item, x)
+func (that *KafkaSourceMessage) encodeSingleMap(item map[string]interface{}) ([]byte, error) {
+	err := MapToStructStrict(item, that)
 	if err != nil {
 		return nil, err
 	}
-	Value_Sink := strconv.FormatFloat(x.Value, 'f', -1, 64)
-	Time_Sink := strconv.FormatInt(x.Time, 10)
-	return []byte(fmt.Sprintf("%s:%s@%s:%s:%s", x.DevCode, x.Metric, x.DataType, Value_Sink, Time_Sink)), nil
+	Value_Sink := strconv.FormatFloat(that.Value, 'f', -1, 64)
+	Time_Sink := strconv.FormatInt(that.Time, 10)
+	return []byte(fmt.Sprintf("%s:%s@%s:%s:%s", that.DevCode, that.Metric, that.DataType, Value_Sink, Time_Sink)), nil
 }
 
-func (x *KafkaFormat) Decode(b []byte) (interface{}, error) {
+func (that *KafkaSourceMessage) Decode(b []byte) (interface{}, error) {
 	if len(b) == 0 {
 		return nil, fmt.Errorf("input byte slice is empty")
 	}
@@ -142,6 +145,57 @@ func (x *KafkaFormat) Decode(b []byte) (interface{}, error) {
 	return resultMsgs, decodeError
 }
 
+///////////////////////////////////////////////////////////////
+
+type KafkaSinkMessage struct {
+	DevCode_Sink  string  `json:"DevCode_Sink"`
+	Metric_Sink   string  `json:"Metric_Sink"`
+	DataType_Sink string  `json:"DataType_Sink"`
+	Value_Sink    float64 `json:"Value_Sink"`
+	Time_Sink     int64   `json:"Time_Sink"`
+}
+
+func (that *KafkaSinkMessage) GetSchemaJson() string {
+	// return a static schema
+	return `{
+		"Action_Sink": {"type": "string"},"
+		"DevCode_Sink": {"type": "string"},
+		"Metric_Sink": {"type": "string"},
+		"DataType_Sink": {"type": "string"},
+		"Value_Sink": {"type": "float"},
+		"Time_Sink": {"type": "string"}
+	}`
+}
+
+// DTHYJK:NSFC:Q1:W001:WNAC_WdSpd@s:value:timestamp(unixmilli)
+// @f;@s;@b
+func (that *KafkaSinkMessage) Encode(d interface{}) (string, error) {
+	switch r := d.(type) {
+	case map[string]interface{}:
+		err := MapToStructStrict(r, that)
+		if err != nil {
+			return "", err
+		}
+
+		val, err := cast.ToString(that.Value_Sink, cast.CONVERT_ALL)
+		if err != nil {
+			return "", err
+		}
+
+		timestamp, err := cast.ToString(that.Time_Sink, cast.CONVERT_ALL)
+		if err != nil {
+			return "", err
+		}
+
+		result := that.DevCode_Sink + ":" + that.Metric_Sink + "@" + that.DataType_Sink + ":" + val + ":" + timestamp
+		return result, nil
+	default:
+		return "", fmt.Errorf("unsupported type %v, must be a map", d)
+	}
+}
+
+///////////////////////////////////////////////////////////////
+
 func MapToStructStrict(input, output interface{}) error {
 	config := &mapstructure.DecoderConfig{
 		ErrorUnused: true,
@@ -156,8 +210,8 @@ func MapToStructStrict(input, output interface{}) error {
 	return decoder.Decode(input)
 }
 
-func GetKafkaFormat() interface{} {
-	return &KafkaFormat{}
+func GetKafkaSourceMessage() interface{} {
+	return &KafkaSourceMessage{}
 }
 
 // byteSliceToString直接将[]byte转换为string，避免额外的内存分配
