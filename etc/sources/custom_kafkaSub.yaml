@@ -7,9 +7,9 @@ default:
   saslAuthType: "none"
   insecureSkipVerify: true
 
-test:
+defaultNoGroup:
   brokers: "10.50.145.3:9092"
-  groupID: "groupId"
+  groupID: ""
   partition: 0
   maxBytes: 1000000
   maxAttempts: 3
