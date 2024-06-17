@@ -12,6 +12,7 @@ import (
 )
 
 type RedisSourceMessage struct {
+	Action   string  `json:"action"`   // 扩展指令
 	DevCode  string  `json:"devCode"`  // 设备代码
 	Metric   string  `json:"metric"`   // 指标
 	DataType string  `json:"dataType"` // 数据类型
@@ -22,6 +23,7 @@ type RedisSourceMessage struct {
 func (that *RedisSourceMessage) GetSchemaJson() string {
 	// return a static schema
 	return `{
+		"Action": {"type": "string"},
 		"DevCode": {"type": "string"},
 		"Metric": {"type": "string"},
 		"DataType": {"type": "string"},
@@ -126,6 +128,7 @@ func (that *RedisSourceMessage) Decode(b []byte) (interface{}, error) {
 		// }
 
 		rm := mapPool.Get().(map[string]interface{}) // 从Pool中获取一个map
+		rm["Action"] = "none"
 		rm["DevCode"] = devCode
 		rm["Metric"] = metric
 		rm["DataType"] = dataType
