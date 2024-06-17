@@ -189,7 +189,8 @@ func (r *redisPub) PublishgRedisWithMsg(ctx api.StreamContext, message []string,
 
 	buf := new(bytes.Buffer)
 	writer := zlib.NewWriter(buf)
-	_, err := writer.Write([]byte("," + msgList))
+	// _, err := writer.Write([]byte("," + msgList))
+	_, err := writer.Write([]byte(msgList))
 	if err != nil {
 		return err
 	}
