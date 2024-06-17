@@ -116,7 +116,7 @@ func (r *redisPub) CollectResend(ctx api.StreamContext, item interface{}) error 
 
 func (r *redisPub) collectWithChannel(ctx api.StreamContext, item interface{}, channel string) error {
 	logger := ctx.GetLogger()
-	logger.Infof("receive %+v", item)
+	logger.Debugf("receive %+v", item)
 
 	switch d := item.(type) {
 	case []byte:
