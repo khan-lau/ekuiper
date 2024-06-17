@@ -149,6 +149,7 @@ func (that *RedisSourceMessage) Decode(b []byte) (interface{}, error) {
 ///////////////////////////////////////////////////////////////
 
 type RedisSinkMessage struct {
+	Action_Sink   string  `json:"Action_Sink"`
 	DevCode_Sink  string  `json:"DevCode_Sink"`
 	Metric_Sink   string  `json:"Metric_Sink"`
 	DataType_Sink string  `json:"DataType_Sink"`

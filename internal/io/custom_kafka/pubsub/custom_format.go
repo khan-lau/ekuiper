@@ -128,6 +128,7 @@ func (that *KafkaSourceMessage) Decode(b []byte) (interface{}, error) {
 		// }
 
 		rm := mapPool.Get().(map[string]interface{}) // 从Pool中获取一个map
+		rm["Action"] = "none"
 		rm["DevCode"] = devCode
 		rm["Metric"] = metric
 		rm["DataType"] = dataType
@@ -148,6 +149,7 @@ func (that *KafkaSourceMessage) Decode(b []byte) (interface{}, error) {
 ///////////////////////////////////////////////////////////////
 
 type KafkaSinkMessage struct {
+	Action_Sink   string  `json:"Action_Sink"`
 	DevCode_Sink  string  `json:"DevCode_Sink"`
 	Metric_Sink   string  `json:"Metric_Sink"`
 	DataType_Sink string  `json:"DataType_Sink"`
