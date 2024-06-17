@@ -15,15 +15,19 @@
 package pubsub
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
+	"encoding/json"
 	"fmt"
+	"strings"
+	"sync"
 
 	"github.com/redis/go-redis/v9"
 
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
@@ -31,6 +35,9 @@ type redisPub struct {
 	conf       *redisPubConfig
 	conn       *redis.Client
 	compressor message.Compressor
+
+	results []string
+	mux     sync.Mutex
 }
 
 type redisPubConfig struct {
@@ -109,24 +116,91 @@ func (r *redisPub) CollectResend(ctx api.StreamContext, item interface{}) error 
 
 func (r *redisPub) collectWithChannel(ctx api.StreamContext, item interface{}, channel string) error {
 	logger := ctx.GetLogger()
-	logger.Debugf("receive %+v", item)
-	// Transform
-	jsonBytes, _, err := ctx.TransformOutput(item)
+	logger.Infof("receive %+v", item)
+
+	if v, ok := item.([]byte); ok {
+		var trandatas []map[string]interface{}
+		r.mux.Lock()
+		if err := json.Unmarshal(v, &trandatas); err != nil {
+			logger.Error(err)
+			return err
+		}
+
+		redisMessage := RedisSinkMessage{}
+		for _, trandata := range trandatas {
+			encode, err := redisMessage.Encode(trandata)
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
+			r.results = append(r.results, string(encode))
+		}
+		r.mux.Unlock()
+	} else if v, ok := item.(map[string]interface{}); ok {
+		redisMessage := RedisSinkMessage{}
+		r.mux.Lock()
+		encode, err := redisMessage.Encode(v)
+		if err != nil {
+			logger.Error(err)
+		}
+		r.results = append(r.results, string(encode))
+		r.mux.Unlock()
+	}
+
+	if len(r.results) > 0 {
+		if err := r.PublishgRedisWithMsg(ctx, r.results, channel); err != nil {
+			logger.Error(err)
+			return err
+		} else {
+			r.results = make([]string, 0)
+		}
+	} else {
+		logger.Error("file sink receive non byte data")
+	}
+
+	// // Transform
+	// jsonBytes, _, err := ctx.TransformOutput(item)
+	// if err != nil {
+	// 	logger.Errorf("Error occurred while transforming the Redis message: %v", err)
+	// 	return err
+	// }
+	// logger.Debugf("%s publish %s", ctx.GetOpId(), jsonBytes)
+
+	// // Compress
+	// if r.compressor != nil {
+	// 	jsonBytes, err = r.compressor.Compress(jsonBytes)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
+	// // Publish
+	// err = r.conn.Publish(ctx, channel, jsonBytes).Err()
+	// if err != nil {
+	// 	return errorx.NewIOErr(fmt.Sprintf(`Error occurred while publishing the Redis message to %s`, r.conf.Address))
+	// }
+	return nil
+}
+
+func (r *redisPub) PublishgRedisWithMsg(ctx api.StreamContext, message []string, channel string) error {
+	msgList := strings.Join(message, ",")
+
+	logger := ctx.GetLogger()
+	logger.Infof("redisPub sink publish %s", msgList)
+
+	buf := new(bytes.Buffer)
+	writer := zlib.NewWriter(buf)
+	_, err := writer.Write([]byte("," + msgList))
 	if err != nil {
 		return err
 	}
-	logger.Debugf("%s publish %s", ctx.GetOpId(), jsonBytes)
-	// Compress
-	if r.compressor != nil {
-		jsonBytes, err = r.compressor.Compress(jsonBytes)
-		if err != nil {
-			return err
-		}
-	}
-	// Publish
-	err = r.conn.Publish(ctx, channel, jsonBytes).Err()
+	err = writer.Close()
 	if err != nil {
-		return errorx.NewIOErr(fmt.Sprintf(`Error occurred while publishing the Redis message to %s`, r.conf.Address))
+		return err
+	}
+	compressedData := buf.Bytes()
+	err = r.conn.Publish(ctx, channel, compressedData).Err()
+	if err != nil {
+		return err
 	}
 	return nil
 }

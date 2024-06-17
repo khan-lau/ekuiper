@@ -90,6 +90,8 @@ func main() {
 	app := cli.NewApp()
 	app.Version = Version
 
+	fmt.Printf("Starting Kuiper %s\n", Version)
+
 	var cfg map[string]clientConf
 	err := conf.LoadConfigByName(ClientYaml, &cfg)
 	if err != nil {

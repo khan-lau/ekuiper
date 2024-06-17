@@ -119,6 +119,9 @@ func getStoreConfigByKuiperConfig(c *conf.KuiperConf) (*store.StoreConf, error) 
 func StartUp(Version string) {
 	version = Version
 	startTimeStamp = time.Now().Unix()
+
+	fmt.Printf("Starting Kuiper %s...\n", version)
+
 	createPaths()
 	conf.InitConf()
 	factory.InitClientsFactory()

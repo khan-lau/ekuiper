@@ -136,7 +136,7 @@ func getTuples(ctx api.StreamContext, r *redisSub, env interface{}) []api.Source
 	}
 
 	// built-in decode
-	redisFormat := GetRedisFormat().(message.Converter)
+	redisFormat := GetRedisSourceMessage().(message.Converter)
 	resultsAny, err := redisFormat.Decode(payload)
 	if resultsAny == nil || err != nil {
 		return []api.SourceTuple{}
@@ -158,6 +158,7 @@ func getTuples(ctx api.StreamContext, r *redisSub, env interface{}) []api.Source
 
 	tuples := make([]api.SourceTuple, 0, len(results))
 	for _, result := range results {
+		// ctx.GetLogger().Infof("parse source item: %+v ", result)
 		tuples = append(tuples, api.NewDefaultSourceTupleWithTime(result, meta, rcvTime))
 	}
 	return tuples
