@@ -209,6 +209,7 @@ if not exist .\\plugins\\wasm (
 * `跳变`     处理方式: 删除 或 补点, 补点规则见备注
   - 1. 连续两个点的`差的绝对值` `大于或小于` `阈值` 
   - 2. 连续两个点的`斜率` (`差的绝对值` / fabs(A点时间戳 - B点时间戳)) `大于或小于` `阈值` 
+  - 3. 递增指标的跳变 
 * `死值`     处理方式: 删除 或 补点, 补点规则见备注
   - 1. 连续多长时间 `值不变`; 
   - 2. 连续多少个点 `值不变`; 
@@ -223,29 +224,76 @@ if not exist .\\plugins\\wasm (
 > 1. 补前一个点
 > 2. 补前一段点的平均值 - 可能是补一段时间内的点平均值 或 一批数量的平均值  待定
 
+> 需要输出明文时, sink输出模板: 
+> {{range .}},{{.DevCode_Sink}}:{{.Metric_Sink}}@{{.DataType_Sink}}:{{.Value_Sink}}:{{.Time_Sink}}{{end}}
+
 > 周新桐说`直接打标签 不补点`
 
 ##### 越限
 
+越限:
+
 ```java
- sql = "SELECT time, devCode, metric, value "
-    + "FROM ${source} " 
-    + "WHERE devCode = \\\"${asset_code}\\\" "
-    +            "AND metric = \\\"${index_code}\\\" "
-    +            "AND {rule}"
+ sql = "SELECT"
+    +     "\\\"${working_action}\\\" AS Action_Sink, "
+    +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
+    +     "\\\"${out_metric}\\\" AS Metric_Sink, "
+    +     "DataType AS DataType_Sink, "
+    +     "CASE Value WHEN Value ${than_operator} ${threshold} THEN 1 else 0 END AS Adjust_Sink, "
+    +     "${aggregate_type}(Value) AS Value_Sink, "
+    +     "window_end() AS Time_Sink "
+    + "FROM ${source} "
+    + "WHERE DevCode = \\\"${asset_code}\\\" AND Metric = \\\"${index_code}\\\" AND Value ${than_operator} ${threshold}"
+```
+
+非越限:
+
+```java
+ sql = "SELECT"
+    +     "\\\"${working_action}\\\" AS Action_Sink, "
+    +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
+    +     "\\\"${out_metric}\\\" AS Metric_Sink, "
+    +     "DataType AS DataType_Sink, "
+    +     "CASE Value WHEN Value ${than_operator} ${threshold} THEN 0 else 1 END AS Adjust_Sink, "
+    +     "${aggregate_type}(Value) AS Value_Sink, "
+    +     "window_end() AS Time_Sink "
+    + "FROM ${source} "
+    + "WHERE DevCode = \\\"${asset_code}\\\" AND Metric = \\\"${index_code}\\\" AND Value ${than_operator} ${threshold}"
 ```
 
 
-- `rule` :  value ${than_operator} ${threshold} ;  
-  - `than_operator` 比较符号 `>` `<`
-  - `threshold` 阈值
+ - `working_action` action_sink表达式, 见[章节-action_sink表达式格式](####action_sink表达式格式)
+ - `out_dev_code`   输出的资产名称
+ - `out_metric`     输出的指标名称
+ - `adjust_value`   补偿值, 可以是值, 或表达式
+ - `aggregate_type` 聚合函数名称
+ - `than_operator`  比较符号 `>` `<`
+ - `threshold`      阈值
+
+```sql
+SELECT
+    "proc=out_limit" AS Action_Sink,
+    "DTGZJK:BBGF" AS DevCode_Sink,
+    "PWhD_C" AS Metric_Sink,
+    DataType AS DataType_Sink,
+    CASE Value WHEN Value > 1000 THEN 0 else 1 END AS Adjust_Sink, ,
+    Sum(Value) AS Value_Sink,
+    window_end() AS Time_Sink
+FROM custom_redisSub
+WHERE DevCode = "DTGZJK:BBGF" AND Metric = "PWhD_C" AND Value > 1000
+```
+
+
+> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
+> 2. Action_Sink 固定值为 `"proc=out_limit"`
+> 3. 该需求需要`配置2个rule`, 用于处理 `越限` 与 `非越限` 不同sink通道
 
 ##### 跳变
 
-###### 连续两个点的`差的绝对值`
+###### ~~连续两个点的`差的绝对值`~~
 
 ```java
-sql = "SELECT time, devCode, metric, abs(last_value(value) - first_value(value)) AS jumpVal "
+sql = "SELECT time, devCode, metric, abs(last_value(value, true) - first_value(value, true)) AS jumpVal "
      + "FROM ${source}  "
      + "GROUP BY COUNTWINDOW(ss, 2, 1) " 
      + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
@@ -253,49 +301,212 @@ sql = "SELECT time, devCode, metric, abs(last_value(value) - first_value(value))
     +            "AND ${rule} )"
 ```
 
-- `rule` :  jumpVal ${than_operator} ${threshold} ;  
-  - `than_operator` 比较符号 `>` `<`
-  - `threshold` 阈值
+ - `working_action` action_sink表达式, 见[章节-action_sink表达式格式](####action_sink表达式格式)
+ - `out_dev_code`   输出的资产名称
+ - `out_metric`     输出的指标名称
+ - `adjust_value`   补偿值, 可以是值, 或表达式
+ - `aggregate_type` 聚合函数名称
+ - `than_operator`  比较符号 `>` `<`
+ - `threshold`      阈值
 
 
 ###### 连续两个点的`斜率`
 
+清洗并补偿跳变记录:
 ```java
-sql = "SELECT time, devCode, metric, abs(last(value) - first(value)) / abs( (last_value(time) - first_value(time) ) / 1000 ) AS jumpVal "
-     + "FROM ${source}  "
-     + "GROUP BY COUNTWINDOW(ss, 2, 1) " 
-     + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
+sql = "SELECT "
+    +     "\\\"${working_action}\\\" AS Action_Sink, "
+    +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
+    +     "\\\"${out_metric}\\\" AS Metric_Sink, "
+    +     "DataType AS DataType_Sink, "
+    +     "${threshold} AS Adjust_Sink, "
+    +     "Value AS Value_Sink, "
+    +     "window_end() AS Time_Sink "
+    + "FROM ${source}  "
+    + "GROUP BY COUNTWINDOW(ss, 2, 1) " 
+    + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
     +            "AND metric = \\\"${index_code}\\\" "
-    +            "AND ${rule} )"
 ```
 
-- `rule` :  jumpVal ${than_operator} ${threshold} ;  
-  - `than_operator` 比较符号 `>` `<`
-  - `threshold` 阈值
+```sql
+SELECT 
+    "proc=jump \n proc.filter=not_in" AS Action_Sink,
+    "DTGZJK:BBGF" AS DevCode_Sink,
+    "PWhD_C" AS Metric_Sink,
+    DataType AS DataType_Sink,
+    5 AS Adjust_Sink,      -- 此处传递阈值
+    Value AS Value_Sink
+    window_end() AS Time_Sink
+FROM custom_redisSub
+WHERE DevCode = "DTGZJK:BBGF" AND Metric = "PWhD_C"
+
+```
+
+> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
+> 2. Action_Sink 固定值为 `"proc=jump \n proc.filter=not_in"`
+
+
+过滤出跳变记录:
+```java
+sql = "SELECT "
+    +     "\\\"${working_action}\\\" AS Action_Sink, "
+    +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
+    +     "\\\"${out_metric}\\\" AS Metric_Sink, "
+    +     "DataType AS DataType_Sink, "
+    +     "${threshold} AS Adjust_Sink, "
+    +     "Value AS Value_Sink, "
+    +     "window_end() AS Time_Sink "
+    + "FROM ${source}  "
+    + "GROUP BY COUNTWINDOW(ss, 2, 1) " 
+    + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
+    +            "AND metric = \\\"${index_code}\\\" "
+```
+
+> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
+> 2. Action_Sink 固定值为 `"proc=jump \n proc.filter=in"`
+
+#### 递增指标跳变清洗
+指标值持续往一个方向递增, 当前值与前一个值之间的斜率大于阈值
+
+条件依据:
+1. `当前点`与`上一个点`进行`斜率`计算，若`斜率`大于`阈值`，则认为该点发生`跳变`, 该点被`丢弃`
+2. 若跳变状况恢复正常时, 对`当前点`进行`补偿运算`
+
+补偿规则:
+- 补偿值: 当前点之前的所有 `跳变点` 与 `前一个点` 之间 `差的总和` 
+- `跳变发生后`的`所有`未被丢弃的`正常点`都需要`加`上`补偿值`
+
+
+
+```plantext
+                12  
+              11      ----> 恢复点   11 + 补偿值 
+            10      ----> 跳变点  补偿值 (7-10) -3 + -4
+        7       ----> 跳变点  补偿值 (3-7) = -4
+    3       ----> 正常点
+  2
+1
+```
+
+
+清洗并补偿跳变记录:
+```java
+sql = "SELECT "
+    +     "\\\"${working_action}\\\" AS Action_Sink, "
+    +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
+    +     "\\\"${out_metric}\\\" AS Metric_Sink, "
+    +     "DataType AS DataType_Sink, "
+    +     "${threshold} AS Adjust_Sink, "
+    +     "Value AS Value_Sink, "
+    +     "window_end() AS Time_Sink "
+    + "FROM ${source}  "
+    + "GROUP BY COUNTWINDOW(ss, 2, 1) " 
+    + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
+    +            "AND metric = \\\"${index_code}\\\" "
+```
+
+> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
+> 2. Action_Sink 固定值为 `"proc=jump \n proc.filter=not_in"`
+
+
+
+过滤出跳变记录:
+```java
+sql = "SELECT "
+    +     "\\\"${working_action}\\\" AS Action_Sink, "
+    +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
+    +     "\\\"${out_metric}\\\" AS Metric_Sink, "
+    +     "DataType AS DataType_Sink, "
+    +     "${threshold} AS Adjust_Sink, "
+    +     "Value AS Value_Sink, "
+    +     "window_end() AS Time_Sink "
+    + "FROM ${source}  "
+    + "GROUP BY COUNTWINDOW(ss, 2, 1) " 
+    + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
+    +            "AND metric = \\\"${index_code}\\\" "
+```
+
+> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
+> 2. Action_Sink 固定值为 `"proc=jump \n proc.filter=in"`
 
 ##### 死值
 
 ###### 连续多长时间 `值不变`
 
+死值:
 ```java
-sql = "SELECT time, devCode, metric, value, "
-     +       " CASE value WHEN max(value) - min(value) = 0 then 1 else 0 end AS deathVal "
-     + "FROM ${source}  "
-     + "GROUP BY SLIDINGWINDOW(ss, ${window_time}) " 
-     + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
+sql = "SELECT "
+    +     "\\\"${working_action}\\\" AS Action_Sink, "
+    +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
+    +     "\\\"${out_metric}\\\" AS Metric_Sink, "
+    +     "DataType AS DataType_Sink, "
+    +     "CASE Value WHEN max(Value) - min(Value) = 0 then 1 else 0 end AS Adjust_Sink, "
+    +     "Value AS Value_Sink, "
+    +     "window_end() AS Time_Sink "
+    + "FROM ${source}  "
+    + "GROUP BY SLIDINGWINDOW(ss, ${window_time}) " 
+    + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
     +            "AND metric = \\\"${index_code}\\\"  )"
 ```
+
+
+非死值:
+```java
+sql = "SELECT "
+    +     "\\\"${working_action}\\\" AS Action_Sink, "
+    +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
+    +     "\\\"${out_metric}\\\" AS Metric_Sink, "
+    +     "DataType AS DataType_Sink, "
+    +     "CASE Value WHEN max(Value) - min(Value) = 0 then 0 else 1 end AS Adjust_Sink, "
+    +     "Value AS Value_Sink, "
+    +     "window_end() AS Time_Sink "
+    + "FROM ${source}  "
+    + "GROUP BY SLIDINGWINDOW(ss, ${window_time}) " 
+    + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
+    +            "AND metric = \\\"${index_code}\\\"  )"
+```
+
+> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
+> 2. Action_Sink 固定值为 `"proc=dead"`
+> 3. 该需求需要`配置2个rule`, 用于处理 `死值` 与 `非死值的` 不同sink通道
 
 ###### 连续多少个点 `值不变`
 
+死值:
 ```java
-sql = "SELECT time, devCode, metric, value, "
-     +       " CASE value WHEN max(value) - min(value) = 0 then 1 else 0 end AS deathVal "
-     + "FROM ${source}  "
-     + "GROUP BY COUNTWINDOW(ss, ${window_count}, 1) " 
-     + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
+sql = "SELECT "
+    +     "\\\"${working_action}\\\" AS Action_Sink, "
+    +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
+    +     "\\\"${out_metric}\\\" AS Metric_Sink, "
+    +     "DataType AS DataType_Sink, "
+    +     " CASE Value WHEN max(Value) - min(Value) = 0 then 1 else 0 end AS Adjust_Sink, "
+    +     "Value AS Value_Sink, "
+    +     "window_end() AS Time_Sink "
+    + "FROM ${source}  "
+    + "GROUP BY COUNTWINDOW(ss, ${window_count}, 1) " 
+    + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
     +            "AND metric = \\\"${index_code}\\\"  )"
 ```
+
+非死值:
+```java
+sql = "SELECT "
+    +     "\\\"${working_action}\\\" AS Action_Sink, "
+    +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
+    +     "\\\"${out_metric}\\\" AS Metric_Sink, "
+    +     "DataType AS DataType_Sink, "
+    +     "CASE Value WHEN max(Value) - min(Value) = 0 then 0 else 1 end AS Adjust_Sink, "
+    +     "Value AS Value_Sink, "
+    +     "window_end() AS Time_Sink "
+    + "FROM ${source}  "
+    + "GROUP BY COUNTWINDOW(ss, ${window_count}, 1) " 
+    + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
+    +            "AND metric = \\\"${index_code}\\\"  )"
+```
+
+> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
+> 2. Action_Sink 固定值为 `"proc=dead"`
+> 3. 该需求需要`配置2个rule`, 用于处理 `死值` 与 `非死值的` 不同sink通道
 
 ###### ~~连续多少个点 `值不变` 或 连续多长时间 `值不变`~~
 
@@ -310,7 +521,14 @@ sql = "SELECT time, devCode, metric, value, "
 ###### `在`指定时间范围
 
 ```java
- sql = "SELECT time, devCode, metric, value "
+ sql = "SELECT"
+    +     "\\\"${working_action}\\\" AS Action_Sink, "
+    +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
+    +     "\\\"${out_metric}\\\" AS Metric_Sink, "
+    +     "DataType AS DataType_Sink, "
+    +     "1 AS Adjust_Sink, "
+    +     "${aggregate_type}(Value) AS Value_Sink, "
+    +     "window_end() AS Time_Sink "
     + "FROM ${source} " 
     + "WHERE devCode = \\\"${asset_code}\\\" "
     +            "AND metric = \\\"${index_code}\\\" "
@@ -322,11 +540,19 @@ sql = "SELECT time, devCode, metric, value, "
   - `end`   结束时间 123010 int型 表示 12点10分
 
 > `x_from_timestamp` 自定义函数, 将10位精确到s的时间戳 或 13位精确到ms的时间戳转换位date类型
+> Action_Sink 固定值为 `"proc=jump \n proc.filter=in"`
 
 ###### `不在`指定时间范围
 
 ```java
- sql = "SELECT time, devCode, metric, value "
+ sql = "SELECT"
+    +     "\\\"${working_action}\\\" AS Action_Sink, "
+    +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
+    +     "\\\"${out_metric}\\\" AS Metric_Sink, "
+    +     "DataType AS DataType_Sink, "
+    +     "1 AS Adjust_Sink, "
+    +     "${aggregate_type}(Value) AS Value_Sink, "
+    +     "window_end() AS Time_Sink "
     + "FROM ${source} " 
     + "WHERE devCode = \\\"${asset_code}\\\" "
     +            "AND metric = \\\"${index_code}\\\" "
@@ -336,3 +562,42 @@ sql = "SELECT time, devCode, metric, value, "
 - `rule` :  x_timestamp_in_duration(time, ${start}, ${end}) ;  
   - `start` 开始时间 120000 int型 表示 12点整
   - `end`   结束时间 123010 int型 表示 12点10分
+
+> `x_from_timestamp` 自定义函数, 将10位精确到s的时间戳 或 13位精确到ms的时间戳转换位date类型
+> Action_Sink 固定值为 `"proc=jump \n proc.filter=not_in"`
+
+#### action sink表达式格式
+
+`\n`分割的多行`key`=`value`结构
+```ini
+proc=jump              # jump|inc_jump|dead|out_limit|time_filter; 当action.type为proc时需要指定
+proc.filter=in         # in|not_in
+
+; proc.func=append       # append|tag
+; proc.tag=tag01         # action.proc.func为tag时的tag名
+; proc.append.range=prev # prev|next|all|near|custom
+; proc.append.calc=avg   # get|avg|sum|abs|add|sub|-sub|
+```
+
+##### proc 值描述
+- jump        跳变
+- inc_jump    递增指标跳变
+- dead        死值
+- out_limit   越限
+- time_filter 时间过滤
+
+##### proc.append 值描述
+- prev 前一个
+- next 后一个
+- all  窗口内所有值, 排除自身
+- near prev 和 next
+- custom 由定制sink业务处理
+
+##### proc.append.calc 值描述
+- get  取值
+- avg  平均值
+- sum  累加和
+- abs  绝对值
+- add  prev + next
+- sub  prev - next
+- -sub next - prev

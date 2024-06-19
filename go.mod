@@ -5,6 +5,7 @@ require (
 	github.com/PaesslerAG/gval v1.2.2
 	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/alicebob/miniredis/v2 v2.30.0
+	github.com/apache/thrift v0.19.0
 	github.com/apple/foundationdb/bindings/go v0.0.0-20230926042505-6c5b36860c21
 	github.com/benbjohnson/clock v1.3.5
 	github.com/dop251/goja v0.0.0-20231027120936-b396bb4c349d
@@ -13,6 +14,7 @@ require (
 	github.com/edgexfoundry/go-mod-messaging/v3 v3.0.0
 	github.com/fxamacker/cbor/v2 v2.5.0
 	github.com/gdexlab/go-render v1.0.1
+	github.com/go-ini/ini v1.67.0
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
 	github.com/golang-jwt/jwt/v5 v5.1.0
 	github.com/golang/protobuf v1.5.3
@@ -24,7 +26,6 @@ require (
 	github.com/jinzhu/now v1.1.5
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
 	github.com/klauspost/compress v1.17.2
-	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/lf-edge/ekuiper/extensions v0.0.0-20231030085318-99dd34783cba
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/modern-go/reflect2 v1.0.2
@@ -87,7 +88,6 @@ require (
 	github.com/andybalholm/brotli v1.0.6 // indirect
 	github.com/apache/arrow/go/v10 v10.0.1 // indirect
 	github.com/apache/calcite-avatica-go/v5 v5.2.0 // indirect
-	github.com/apache/thrift v0.19.0 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/avast/retry-go v3.0.0+incompatible // indirect
 	github.com/aws/aws-sdk-go v1.47.1 // indirect

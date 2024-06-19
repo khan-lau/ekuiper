@@ -125,7 +125,7 @@ func (m *kafkaPub) Collect(ctx api.StreamContext, item interface{}) error {
 		}
 
 		kafkaMessage := KafkaSinkMessage{}
-		for _, msg := range d {
+		for _, msg := range trandatas {
 			encode, err := kafkaMessage.Encode(msg)
 			if err != nil {
 				logger.Error(err)

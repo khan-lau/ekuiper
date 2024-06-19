@@ -340,7 +340,7 @@ func registerAggFunc() {
 		val:   ValidateTwoNumberArg,
 		check: returnNilIfHasAnyNil,
 	}
-	builtins["last_value"] = builtinFunc{
+	builtins["last_value"] = builtinFunc{ //last_value(column, ignore_null bool)
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			arg0, ok := args[0].([]interface{})
@@ -359,7 +359,7 @@ func registerAggFunc() {
 				return fmt.Errorf("the second parameter requires bool but found %[1]T(%[1]v)", getFirstValidArg(args1)), false
 			}
 			if arg1 {
-				for i := len(arg0) - 1; i >= 0; i-- {
+				for i := 0; i < len(arg0); i++ {
 					if arg0[i] != nil {
 						return arg0[i], true
 					}
@@ -378,7 +378,7 @@ func registerAggFunc() {
 		},
 		check: returnNilIfHasAnyNil,
 	}
-	builtins["first_value"] = builtinFunc{
+	builtins["first_value"] = builtinFunc{ // first_value(column, ignore_null bool) ;
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			arg0, ok := args[0].([]interface{})
@@ -411,6 +411,40 @@ func registerAggFunc() {
 			}
 			if !ast.IsBooleanArg(args[1]) {
 				return ProduceErrInfo(1, "bool")
+			}
+			return nil
+		},
+		check: returnNilIfHasAnyNil,
+	}
+	builtins["get_value"] = builtinFunc{ // get_value(column, index)
+		fType: ast.FuncTypeAgg,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			arg0, ok := args[0].([]interface{})
+			if !ok {
+				return fmt.Errorf("the first argument to the aggregate function should be []interface but found %[1]T(%[1]v)", args[0]), false
+			}
+			if len(arg0) == 0 {
+				return nil, true
+			}
+			args1, ok := args[1].([]interface{})
+			if !ok {
+				return fmt.Errorf("the second argument to the aggregate function should be []interface but found %[1]T(%[1]v)", args[1]), false
+			}
+			arg1, ok := getFirstValidArg(args1).(int)
+			if !ok {
+				return fmt.Errorf("the second parameter requires bool but found %[1]T(%[1]v)", getFirstValidArg(args1)), false
+			}
+			if arg1 >= 0 && arg1 < len(arg0) {
+				return arg0[arg1], true
+			}
+			return nil, false
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if err := ValidateLen(2, len(args)); err != nil {
+				return err
+			}
+			if !ast.IsIntegerArg(args[1]) {
+				return ProduceErrInfo(1, "int")
 			}
 			return nil
 		},

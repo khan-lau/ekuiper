@@ -16,6 +16,7 @@ type RedisSourceMessage struct {
 	DevCode  string  `json:"devCode"`  // 设备代码
 	Metric   string  `json:"metric"`   // 指标
 	DataType string  `json:"dataType"` // 数据类型
+	Adjust   string  `json:"adjust"`   // 校准值
 	Value    float64 `json:"value"`    // 值
 	Time     int64   `json:"time"`     // 时间戳
 }
@@ -27,6 +28,7 @@ func (that *RedisSourceMessage) GetSchemaJson() string {
 		"DevCode": {"type": "string"},
 		"Metric": {"type": "string"},
 		"DataType": {"type": "string"},
+		"Adjust": {"type": "float"},
 		"Value": {"type": "float"},
 		"Time": {"type": "string"}
 	}`
@@ -153,6 +155,7 @@ type RedisSinkMessage struct {
 	DevCode_Sink  string  `json:"DevCode_Sink"`
 	Metric_Sink   string  `json:"Metric_Sink"`
 	DataType_Sink string  `json:"DataType_Sink"`
+	Adjust_Sink   string  `json:"Adjust_Sink"` // 校准值
 	Value_Sink    float64 `json:"Value_Sink"`
 	Time_Sink     int64   `json:"Time_Sink"`
 }
@@ -164,6 +167,7 @@ func (that *RedisSinkMessage) GetSchemaJson() string {
 		"DevCode_Sink": {"type": "string"},
 		"Metric_Sink": {"type": "string"},
 		"DataType_Sink": {"type": "string"},
+		"Adjust_Sink": {"type": "float"},
 		"Value_Sink": {"type": "float"},
 		"Time_Sink": {"type": "string"}
 	}`
