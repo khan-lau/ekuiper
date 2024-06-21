@@ -1,6 +1,6 @@
-# 阅读笔记
+# ekuiper定制开发需求
 
-## 注意事项
+## 一 注意事项
 1. 阅读基准为 ekuiper `1.13.3` tag
 2. 调试平台为 `windows` `mingw64` `gcc 11.2.0`
 3. ekuiper 最低要求的 golang 版本为 `1.21.0`
@@ -107,7 +107,7 @@ if not exist .\\plugins\\wasm (
 ```
 
 
-## 阅读笔记
+## 二 阅读笔记
 
 
 关注点
@@ -139,9 +139,9 @@ if not exist .\\plugins\\wasm (
 > 暂不开启JWT认证
 
 
-## 功能开发
+## 三 功能开发
 
-### 约定
+### 3.1 约定
 1. 该平台依赖定制版的 ekuiper v1.13
   - 1.1 新增 `custom_redis` 内置 sink
   - 1.2 新增 `custom_redis` 内置 source
@@ -152,10 +152,12 @@ if not exist .\\plugins\\wasm (
   - 1.7 新增 `日期时间函数` `x_from_timestamp(timestamp)`
   - 1.8 新增 `custom_kafkaPub` 内置 sink
   - 1.9 新增 `custom_kafkaSub` 内置 source, 经过该source的 `time时间戳字段` `精确到ms`
-2. `custom_redisSub` 处理后的数据格式 见备注
+  - 1.10 新增 `custom_kafka_2tdb` 内置sink, 经过该sink的数据会被`清洗`或`过滤`后使用`thrift 0.15.0`格式通过`TSDBRpc`平台 `存储`到时序库
+  - 1.11 新增 `聚合函数` `get_value(col, index)`  获取指定字段指定索引的值
+2. `custom_redisSub` 处理后的数据格式 见`备注1`
 
 
-> 备注: 
+> 备注1: 
 > ```json 
 >   {
 >     "devCode":  "DTXY:NFFC:0001:Q1", // 资产编码
@@ -166,14 +168,16 @@ if not exist .\\plugins\\wasm (
 >   }
 > ```
 
-备注:
+备注2:
 > 1. custom_redisSub 接收的数据为 `fieldVal1@type:field2Val@type:cc@field3Val@type` 这样的`:`分割的记录结构; 多条记录之间用`,`分割; `@`分割字段和类型, 可选
 > 2. custom_kafkaSub 接收的数据同上
 >
 > 综上, 字段值和为字符串类型时只可以使用 `[a-zA-Z0-9\_]`表述, 为数值时可以使用 `[0-9\.]`表述
 
+备注3: 
+> `custom_kafka_2tdb` 插件必须使用 `thrift 0.15.0`, 而ekuiper自身似乎引用了 `0.19.0`, 可能会产生依赖冲突
 
-### ekuiper规则管理restful api
+### 3.2 ekuiper规则管理restful api
 
 * 检查规则     POST   http://localhost:9081/rules/validate
 * 新增规则     POST   http://localhost:9081/rules
@@ -186,24 +190,34 @@ if not exist .\\plugins\\wasm (
 * 停止规则     POST   http://localhost:9081/rules/{id}/stop
 * 重启规则     POST   http://localhost:9081/rules/{id}/restart
 
-#### 数据聚合规则管理
+#### 3.2.1 数据聚合规则管理
 
 ```java
-  sql = "SELECT ${aggregate_type}(value) FROM ${source} "
-                + "GROUP BY HOPPINGWINDOW(ss, ${window_time}, ${trigger_cycle}) "
-                + " FILTER(WHERE devCode = \\\"${asset_code}\\\" AND metric = \\\"${index_code}\\\")"
+ sql = "SELECT"
+    +     "\\\"\\\" AS Action_Sink, "
+    +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
+    +     "\\\"${out_metric}\\\" AS Metric_Sink, "
+    +     "DataType AS DataType_Sink, "
+    +     "0 AS Adjust_Sink, "
+    +     "${aggregate_type}(Value) AS Value_Sink, "
+    +     "window_end() AS Time_Sink "
+        + "FROM ${source} "
+        + "GROUP BY HOPPINGWINDOW(ss, ${window_time}, ${trigger_cycle}) "
+        + " FILTER(WHERE devCode = \\\"${asset_code}\\\" AND metric = \\\"${index_code}\\\")"
 ```
 
 参数绑定
+- out_dev_code   输出的资产编码
+- out_metric     输出的指标编码
 - aggregate_type 聚合函数名称
 - source         数据源名称
 - window_time    时间窗口大小 单位：秒
 - trigger_cycle  触发周期     单位：秒
-- asset_code     资产编码
-- index_code     指标编码
+- asset_code     查询的资产编码
+- index_code     查询的指标编码
 
 
-#### 数据清洗规则管理
+#### 3.2.2 数据清洗规则管理
 * `越限`     处理方式: 删除 或 补点, 补点规则见备注
   - 1. 点的值大于或小于 `指定值`;            
 * `跳变`     处理方式: 删除 或 补点, 补点规则见备注
@@ -227,9 +241,9 @@ if not exist .\\plugins\\wasm (
 > 需要输出明文时, sink输出模板: 
 > {{range .}},{{.DevCode_Sink}}:{{.Metric_Sink}}@{{.DataType_Sink}}:{{.Value_Sink}}:{{.Time_Sink}}{{end}}
 
-> 周新桐说`直接打标签 不补点`
+> ~~周新桐说`直接打标签 不补点`~~
 
-##### 越限
+##### 3.2.2.1 越限
 
 越限:
 
@@ -288,9 +302,9 @@ WHERE DevCode = "DTGZJK:BBGF" AND Metric = "PWhD_C" AND Value > 1000
 > 2. Action_Sink 固定值为 `"proc=out_limit"`
 > 3. 该需求需要`配置2个rule`, 用于处理 `越限` 与 `非越限` 不同sink通道
 
-##### 跳变
+##### 3.2.2.2 跳变
 
-###### ~~连续两个点的`差的绝对值`~~
+###### 3.2.2.2.1 ~~连续两个点的`差的绝对值`~~
 
 ```java
 sql = "SELECT time, devCode, metric, abs(last_value(value, true) - first_value(value, true)) AS jumpVal "
@@ -310,7 +324,7 @@ sql = "SELECT time, devCode, metric, abs(last_value(value, true) - first_value(v
  - `threshold`      阈值
 
 
-###### 连续两个点的`斜率`
+###### 3.2.2.2.2 连续两个点的`斜率`
 
 清洗并补偿跳变记录:
 ```java
@@ -365,8 +379,8 @@ sql = "SELECT "
 > 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
 > 2. Action_Sink 固定值为 `"proc=jump \n proc.filter=in"`
 
-#### 递增指标跳变清洗
-指标值持续往一个方向递增, 当前值与前一个值之间的斜率大于阈值
+###### 3.2.2.2.3 递增指标跳变清洗
+指标值持续往一个方向递增, 当前值与前一个值之间的斜率大于阈值, 该需求属于需要特殊处理的跳变, 逻辑独立于普通指标的跳变
 
 条件依据:
 1. `当前点`与`上一个点`进行`斜率`计算，若`斜率`大于`阈值`，则认为该点发生`跳变`, 该点被`丢弃`
@@ -429,9 +443,9 @@ sql = "SELECT "
 > 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
 > 2. Action_Sink 固定值为 `"proc=jump \n proc.filter=in"`
 
-##### 死值
+##### 3.2.2.3 死值
 
-###### 连续多长时间 `值不变`
+###### 3.2.2.3.1 连续多长时间 `值不变`
 
 死值:
 ```java
@@ -470,7 +484,7 @@ sql = "SELECT "
 > 2. Action_Sink 固定值为 `"proc=dead"`
 > 3. 该需求需要`配置2个rule`, 用于处理 `死值` 与 `非死值的` 不同sink通道
 
-###### 连续多少个点 `值不变`
+###### 3.2.2.3.2 连续多少个点 `值不变`
 
 死值:
 ```java
@@ -508,17 +522,17 @@ sql = "SELECT "
 > 2. Action_Sink 固定值为 `"proc=dead"`
 > 3. 该需求需要`配置2个rule`, 用于处理 `死值` 与 `非死值的` 不同sink通道
 
-###### ~~连续多少个点 `值不变` 或 连续多长时间 `值不变`~~
+###### 3.2.2.3.3 ~~连续多少个点 `值不变` 或 连续多长时间 `值不变`~~
 
 **无需实现**
 
-###### ~~连续多少个点 `值不变` 且 连续多长时间 `值不变`~~
+###### 3.2.2.3.4 ~~连续多少个点 `值不变` 且 连续多长时间 `值不变`~~
 
 **无需实现**
 
-##### 时间过滤
+##### 3.2.2.4 时间过滤
 
-###### `在`指定时间范围
+###### 3.2.2.4.1 `在`指定时间范围
 
 ```java
  sql = "SELECT"
@@ -542,7 +556,7 @@ sql = "SELECT "
 > `x_from_timestamp` 自定义函数, 将10位精确到s的时间戳 或 13位精确到ms的时间戳转换位date类型
 > Action_Sink 固定值为 `"proc=jump \n proc.filter=in"`
 
-###### `不在`指定时间范围
+###### 3.2.2.4.2 `不在`指定时间范围
 
 ```java
  sql = "SELECT"
@@ -566,7 +580,7 @@ sql = "SELECT "
 > `x_from_timestamp` 自定义函数, 将10位精确到s的时间戳 或 13位精确到ms的时间戳转换位date类型
 > Action_Sink 固定值为 `"proc=jump \n proc.filter=not_in"`
 
-#### action sink表达式格式
+#### 3.2.3 action sink表达式格式
 
 `\n`分割的多行`key`=`value`结构
 ```ini
@@ -579,21 +593,25 @@ proc.filter=in         # in|not_in
 ; proc.append.calc=avg   # get|avg|sum|abs|add|sub|-sub|
 ```
 
-##### proc 值描述
+##### 3.2.3.1 proc 值描述
 - jump        跳变
 - inc_jump    递增指标跳变
 - dead        死值
 - out_limit   越限
 - time_filter 时间过滤
 
-##### proc.append 值描述
+##### 3.2.3.2 proc.filter 值描述
+- in     异常值`包含`,  过滤规则
+- not_in 异常值`不包含`, 清洗规则
+
+##### 3.2.3.3 ~~proc.append 值描述~~
 - prev 前一个
 - next 后一个
 - all  窗口内所有值, 排除自身
 - near prev 和 next
 - custom 由定制sink业务处理
 
-##### proc.append.calc 值描述
+##### 3.2.3.4 ~~proc.append.calc 值描述~~
 - get  取值
 - avg  平均值
 - sum  累加和
