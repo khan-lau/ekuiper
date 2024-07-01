@@ -1037,7 +1037,7 @@ func validateWindows(fname string, args []ast.Expr) (ast.WindowType, error) {
 		return ast.SESSION_WINDOW, nil
 	case "slidingwindow":
 		if len(args) != 2 && len(args) != 3 {
-			return ast.SLIDING_WINDOW, fmt.Errorf("The arguments for %s should be 2 or 3.\n", fname)
+			return ast.SLIDING_WINDOW, fmt.Errorf("The slidingwindow arguments for %s should be 2 or 3.\n", fname)
 		}
 		if err := validateWindow(fname, len(args), args); err != nil {
 			return ast.SLIDING_WINDOW, err
@@ -1048,21 +1048,21 @@ func validateWindows(fname string, args []ast.Expr) (ast.WindowType, error) {
 			if para1, ok := args[0].(*ast.IntegerLiteral); ok && para1.Val > 0 {
 				return ast.COUNT_WINDOW, nil
 			} else {
-				return ast.COUNT_WINDOW, fmt.Errorf("Invalid parameter value %s.", args[0])
+				return ast.COUNT_WINDOW, fmt.Errorf("Invalid countwindow parameter value %s.", args[0])
 			}
 		} else if len(args) == 2 {
 			if para1, ok1 := args[0].(*ast.IntegerLiteral); ok1 {
 				if para2, ok2 := args[1].(*ast.IntegerLiteral); ok2 {
 					if para1.Val < para2.Val {
-						return ast.COUNT_WINDOW, fmt.Errorf("The second parameter value %d should be less than the first parameter %d.", para2.Val, para1.Val)
+						return ast.COUNT_WINDOW, fmt.Errorf("The countwindow second parameter value %d should be less than the first parameter %d.", para2.Val, para1.Val)
 					} else {
 						return ast.COUNT_WINDOW, nil
 					}
 				}
 			}
-			return ast.COUNT_WINDOW, fmt.Errorf("Invalid parameter value %s, %s.", args[0], args[1])
+			return ast.COUNT_WINDOW, fmt.Errorf("Invalid countwindow parameter value %s, %s.", args[0], args[1])
 		} else {
-			return ast.COUNT_WINDOW, fmt.Errorf("Invalid parameter count.")
+			return ast.COUNT_WINDOW, fmt.Errorf("Invalid countwindow parameter count.")
 		}
 
 	}
