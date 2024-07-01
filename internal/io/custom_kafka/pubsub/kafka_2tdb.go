@@ -21,13 +21,13 @@ import (
 )
 
 type kafka2Tdb struct {
-	writer         *kafkago.Writer
-	c              *sinkConf
-	kc             *kafkaConf
-	tlsConfig      *tls.Config
-	sc             custom_kafka.SaslConf
-	headersMap     map[string]string
-	headerTemplate string
+	writer         *kafkago.Writer        // 用于写入kafka
+	c              *sinkConf              // 用于sink配置
+	kc             *kafkaConf             // 用于kafka配置
+	tlsConfig      *tls.Config            // 用于tls配置
+	sc             custom_kafka.SaslConf  //
+	headersMap     map[string]string      //
+	headerTemplate string                 // 模板
 	tags           map[string]interface{} // 用于数据清洗
 	cfg            *ini.File              // rule 配置
 }
@@ -185,6 +185,7 @@ func (m *kafka2Tdb) Collect(ctx api.StreamContext, item interface{}) error {
 	return err
 }
 
+// Close closes the kafka writer.
 func (m *kafka2Tdb) Close(ctx api.StreamContext) error {
 	return m.writer.Close()
 }
@@ -313,7 +314,7 @@ func (m *kafka2Tdb) parseHeaders(ctx api.StreamContext, data interface{}) ([]kaf
 ////////////////////////////////////////////////////////////////////////////////////////
 
 // 构建thrift 消息结构
-func (that *kafka2Tdb) buildThriftRecord(ctx api.StreamContext, msg map[string]interface{}) *thriftCommon.Record {
+func (that *kafka2Tdb) buildThriftRecord(_ api.StreamContext, msg map[string]interface{}) *thriftCommon.Record {
 	cell := &thriftCommon.Cell{Timestamp: msg["Time_Sink"].(int64), Value: msg["Value_Sink"].(float64)}
 	record := &thriftCommon.Record{}
 	record.Name = msg["DevCode_Sink"].(string) + ":" + msg["Metric_Sink"].(string)
@@ -404,7 +405,7 @@ func (that *kafka2Tdb) watch(ctx api.StreamContext, record map[string]interface{
 
 // 累加跳变清洗并补点
 //   - @return map[string]interface{} 清洗后的记录
-func (that *kafka2Tdb) incJumpWash(ctx api.StreamContext, record map[string]interface{}, cfg *ini.File) []map[string]interface{} {
+func (that *kafka2Tdb) incJumpWash(_ api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
 	records := make([]map[string]interface{}, 0, 1)
 
 	// 如果缓存中有数据，则进行跳变清洗
@@ -449,7 +450,7 @@ func (that *kafka2Tdb) incJumpWash(ctx api.StreamContext, record map[string]inte
 
 // 累加指标跳变过滤
 //   - @return map[string]interface{} 过滤出来的记录
-func (that *kafka2Tdb) incJumpFilter(ctx api.StreamContext, record map[string]interface{}, cfg *ini.File) []map[string]interface{} {
+func (that *kafka2Tdb) incJumpFilter(_ api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
 	records := make([]map[string]interface{}, 0, 1)
 
 	// 如果缓存中有数据，则进行跳变清洗
@@ -494,7 +495,7 @@ func (that *kafka2Tdb) incJumpFilter(ctx api.StreamContext, record map[string]in
 
 // 跳变清洗函数
 //   - @return map[string]interface{} 清洗后的记录
-func (that *kafka2Tdb) jumpWash(ctx api.StreamContext, record map[string]interface{}, cfg *ini.File) []map[string]interface{} {
+func (that *kafka2Tdb) jumpWash(_ api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
 	records := make([]map[string]interface{}, 0, 1)
 	// 如果缓存中有数据，则进行跳变清洗
 	if oldVal, ok := that.tags["Value_Sink"]; ok {
@@ -530,7 +531,7 @@ func (that *kafka2Tdb) jumpWash(ctx api.StreamContext, record map[string]interfa
 
 // 跳变过滤函数
 //   - @return map[string]interface{} 清洗后的记录
-func (that *kafka2Tdb) jumpFilter(ctx api.StreamContext, record map[string]interface{}, cfg *ini.File) []map[string]interface{} {
+func (that *kafka2Tdb) jumpFilter(_ api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
 	records := make([]map[string]interface{}, 0, 1)
 	// 如果缓存中有数据，则进行跳变清洗
 	if oldVal, ok := that.tags["Value_Sink"]; ok {
@@ -562,8 +563,11 @@ func (that *kafka2Tdb) jumpFilter(ctx api.StreamContext, record map[string]inter
 }
 
 // 死值处理
+//   - @param ctx api.StreamContext 上下文
+//   - @param record map[string]interface{} 原始记录
+//   - @param cfg *ini.File 规则配置项
 //   - @return map[string]interface{} 处理后的记录
-func (that *kafka2Tdb) deadWash(ctx api.StreamContext, record map[string]interface{}, cfg *ini.File) []map[string]interface{} {
+func (that *kafka2Tdb) deadWash(ctx api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
 	val := record["Value_Sink"].(float64)
 	timestamp := record["Time_Sink"].(int64)
 	flagVal := record["Adjust_Sink"].(float64)
@@ -580,8 +584,11 @@ func (that *kafka2Tdb) deadWash(ctx api.StreamContext, record map[string]interfa
 }
 
 // 越限处理
+//   - @param ctx api.StreamContext 上下文
+//   - @param record map[string]interface{} 原始记录
+//   - @param cfg *ini.File 规则配置项
 //   - @return map[string]interface{} 处理后的记录
-func (m *kafka2Tdb) outLimitWash(ctx api.StreamContext, record map[string]interface{}, cfg *ini.File) []map[string]interface{} {
+func (m *kafka2Tdb) outLimitWash(ctx api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
 	val := record["Value_Sink"].(float64)
 	timestamp := record["Time_Sink"].(int64)
 	flagVal := record["Adjust_Sink"].(float64)

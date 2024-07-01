@@ -160,11 +160,11 @@ if not exist .\\plugins\\wasm (
 > 备注1: 
 > ```json 
 >   {
->     "devCode":  "DTXY:NFFC:0001:Q1", // 资产编码
->     "metric":   "avg_speed",         // 指标
->     "time":     1717058649000,       // 时间戳, 精确到ms
->     "dataType": "F",                 // 数据类型
->     "value":    23.001               // 数据
+>     "DevCode":  "DTXY:NFFC:0001:Q1", // 资产编码
+>     "Metric":   "avg_speed",         // 指标
+>     "Time":     1717058649000,       // 时间戳, 精确到ms
+>     "DataType": "F",                 // 数据类型
+>     "Value":    23.001               // 数据
 >   }
 > ```
 
@@ -203,7 +203,7 @@ if not exist .\\plugins\\wasm (
     +     "window_end() AS Time_Sink "
         + "FROM ${source} "
         + "GROUP BY HOPPINGWINDOW(ss, ${window_time}, ${trigger_cycle}) "
-        + " FILTER(WHERE devCode = \\\"${asset_code}\\\" AND metric = \\\"${index_code}\\\")"
+        + " FILTER(WHERE DevCode = \\\"${asset_code}\\\" AND Metric = \\\"${index_code}\\\")"
 ```
 
 参数绑定
@@ -307,11 +307,11 @@ WHERE DevCode = "DTGZJK:BBGF" AND Metric = "PWhD_C" AND Value > 1000
 ###### 3.2.2.2.1 ~~连续两个点的`差的绝对值`~~
 
 ```java
-sql = "SELECT time, devCode, metric, abs(last_value(value, true) - first_value(value, true)) AS jumpVal "
+sql = "SELECT Time, DevCode, Metric, abs(last_value(Value, true) - first_value(Value, true)) AS jumpVal "
      + "FROM ${source}  "
      + "GROUP BY COUNTWINDOW(ss, 2, 1) " 
-     + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
-    +            "AND metric = \\\"${index_code}\\\" "
+     + "FILTER ( WHERE DevCode = \\\"${asset_code}\\\" "
+    +            "AND Metric = \\\"${index_code}\\\" "
     +            "AND ${rule} )"
 ```
 
@@ -338,8 +338,8 @@ sql = "SELECT "
     +     "window_end() AS Time_Sink "
     + "FROM ${source}  "
     + "GROUP BY COUNTWINDOW(ss, 2, 1) " 
-    + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
-    +            "AND metric = \\\"${index_code}\\\" "
+    + "FILTER ( WHERE DevCode = \\\"${asset_code}\\\" "
+    +            "AND Metric = \\\"${index_code}\\\" "
 ```
 
 ```sql
@@ -372,8 +372,8 @@ sql = "SELECT "
     +     "window_end() AS Time_Sink "
     + "FROM ${source}  "
     + "GROUP BY COUNTWINDOW(ss, 2, 1) " 
-    + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
-    +            "AND metric = \\\"${index_code}\\\" "
+    + "FILTER ( WHERE DevCode = \\\"${asset_code}\\\" "
+    +            "AND Metric = \\\"${index_code}\\\" "
 ```
 
 > 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
@@ -415,8 +415,8 @@ sql = "SELECT "
     +     "window_end() AS Time_Sink "
     + "FROM ${source}  "
     + "GROUP BY COUNTWINDOW(ss, 2, 1) " 
-    + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
-    +            "AND metric = \\\"${index_code}\\\" "
+    + "FILTER ( WHERE DevCode = \\\"${asset_code}\\\" "
+    +            "AND Metric = \\\"${index_code}\\\" "
 ```
 
 > 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
@@ -436,8 +436,8 @@ sql = "SELECT "
     +     "window_end() AS Time_Sink "
     + "FROM ${source}  "
     + "GROUP BY COUNTWINDOW(ss, 2, 1) " 
-    + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
-    +            "AND metric = \\\"${index_code}\\\" "
+    + "FILTER ( WHERE DevCode = \\\"${asset_code}\\\" "
+    +            "AND Metric = \\\"${index_code}\\\" "
 ```
 
 > 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
@@ -459,8 +459,8 @@ sql = "SELECT "
     +     "window_end() AS Time_Sink "
     + "FROM ${source}  "
     + "GROUP BY SLIDINGWINDOW(ss, ${window_time}) " 
-    + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
-    +            "AND metric = \\\"${index_code}\\\"  )"
+    + "FILTER ( WHERE DevCode = \\\"${asset_code}\\\" "
+    +            "AND Metric = \\\"${index_code}\\\"  )"
 ```
 
 
@@ -476,8 +476,8 @@ sql = "SELECT "
     +     "window_end() AS Time_Sink "
     + "FROM ${source}  "
     + "GROUP BY SLIDINGWINDOW(ss, ${window_time}) " 
-    + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
-    +            "AND metric = \\\"${index_code}\\\"  )"
+    + "FILTER ( WHERE DevCode = \\\"${asset_code}\\\" "
+    +            "AND Metric = \\\"${index_code}\\\"  )"
 ```
 
 > 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
@@ -498,8 +498,8 @@ sql = "SELECT "
     +     "window_end() AS Time_Sink "
     + "FROM ${source}  "
     + "GROUP BY COUNTWINDOW(ss, ${window_count}, 1) " 
-    + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
-    +            "AND metric = \\\"${index_code}\\\"  )"
+    + "FILTER ( WHERE DevCode = \\\"${asset_code}\\\" "
+    +            "AND Metric = \\\"${index_code}\\\"  )"
 ```
 
 非死值:
@@ -514,8 +514,8 @@ sql = "SELECT "
     +     "window_end() AS Time_Sink "
     + "FROM ${source}  "
     + "GROUP BY COUNTWINDOW(ss, ${window_count}, 1) " 
-    + "FILTER ( WHERE devCode = \\\"${asset_code}\\\" "
-    +            "AND metric = \\\"${index_code}\\\"  )"
+    + "FILTER ( WHERE DevCode = \\\"${asset_code}\\\" "
+    +            "AND Metric = \\\"${index_code}\\\"  )"
 ```
 
 > 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
@@ -544,8 +544,8 @@ sql = "SELECT "
     +     "Value AS Value_Sink, "
     +     "window_end() AS Time_Sink "
     + "FROM ${source} " 
-    + "WHERE devCode = \\\"${asset_code}\\\" "
-    +            "AND metric = \\\"${index_code}\\\" "
+    + "WHERE DevCode = \\\"${asset_code}\\\" "
+    +            "AND Metric = \\\"${index_code}\\\" "
     +            "AND {rule}"
 ```
 
@@ -568,8 +568,8 @@ sql = "SELECT "
     +     "Value AS Value_Sink, "
     +     "window_end() AS Time_Sink "
     + "FROM ${source} " 
-    + "WHERE devCode = \\\"${asset_code}\\\" "
-    +            "AND metric = \\\"${index_code}\\\" "
+    + "WHERE DevCode = \\\"${asset_code}\\\" "
+    +            "AND Metric = \\\"${index_code}\\\" "
     +            "AND NOT {rule}"
 ```
 
