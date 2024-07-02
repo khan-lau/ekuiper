@@ -16,7 +16,6 @@ package function
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -559,12 +558,12 @@ func registerDateTimeFunc() {
 			}
 
 			if ast.IsFloatArg(args[1]) || ast.IsStringArg(args[1]) || ast.IsBooleanArg(args[1]) { // 第2个参数 int "80000"
-				fmt.Printf("x_timestamp_in_duration args 1 : %#v", args[1])
+				// fmt.Printf("x_timestamp_in_duration args 1 : %#v", args[1])
 				return ProduceErrInfo(1, "int, example - 80000") // 代表 08:00:00
 			}
 
 			if ast.IsFloatArg(args[2]) || ast.IsStringArg(args[2]) || ast.IsBooleanArg(args[2]) { // 第3个参数 int 83000
-				fmt.Printf("x_timestamp_in_duration args 2 : %#v", args[1])
+				// fmt.Printf("x_timestamp_in_duration args 2 : %#v", args[1])
 				return ProduceErrInfo(2, "int, example - 83000") // 代表 08:30:00
 			}
 			return nil

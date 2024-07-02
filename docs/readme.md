@@ -571,7 +571,7 @@ sql = "SELECT "
     + "FROM ${source} " 
     + "WHERE DevCode = \\\"${asset_code}\\\" "
     +            "AND Metric = \\\"${index_code}\\\" "
-    +            "AND NOT {rule}"
+    +            "AND {rule} != TRUE"
 ```
 
 - `rule` :  x_timestamp_in_duration(time, ${start}, ${end}) ;  
