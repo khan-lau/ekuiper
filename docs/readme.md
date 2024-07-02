@@ -551,8 +551,9 @@ sql = "SELECT "
 
 - `rule` :  x_timestamp_in_duration(time, ${start}, ${end}) ;  
   - `start` 开始时间 120000 int型 表示 12点整
-  - `end`   结束时间 123010 int型 表示 12点10分
+  - `end`   结束时间 123010 int型 表示 12点30分10秒
 
+> `x_timestamp_in_duration` 判断时间戳是否在指定的闹钟范围内
 > `x_from_timestamp` 自定义函数, 将10位精确到s的时间戳 或 13位精确到ms的时间戳转换位date类型
 > Action_Sink 固定值为 `"proc=jump \n proc.filter=in"`
 
@@ -575,8 +576,9 @@ sql = "SELECT "
 
 - `rule` :  x_timestamp_in_duration(time, ${start}, ${end}) ;  
   - `start` 开始时间 120000 int型 表示 12点整
-  - `end`   结束时间 123010 int型 表示 12点10分
+  - `end`   结束时间 123010 int型 表示 12点30分10秒
 
+> `x_timestamp_in_duration` 判断时间戳是否在指定的闹钟范围内
 > `x_from_timestamp` 自定义函数, 将10位精确到s的时间戳 或 13位精确到ms的时间戳转换位date类型
 > Action_Sink 固定值为 `"proc=jump \n proc.filter=not_in"`
 
