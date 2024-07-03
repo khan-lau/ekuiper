@@ -177,6 +177,9 @@ if not exist .\\plugins\\wasm (
 备注3: 
 > `custom_kafka_2tdb` 插件必须使用 `thrift 0.15.0`, 而ekuiper自身似乎引用了 `0.19.0`, 可能会产生依赖冲突
 
+> 要点:
+>> `时间窗口` 的 `聚合` 会产生 `空值`, 在`custom_kafka_2tdb`插件中会被直接过滤掉, `不写入`时序库, 此特性已经跟 旷文祥 确认
+
 ### 3.2 ekuiper规则管理restful api
 
 * 检查规则     POST   http://localhost:9081/rules/validate
@@ -242,6 +245,8 @@ if not exist .\\plugins\\wasm (
 > {{range .}},{{.DevCode_Sink}}:{{.Metric_Sink}}@{{.DataType_Sink}}:{{.Value_Sink}}:{{.Time_Sink}}{{end}}
 
 > ~~周新桐说`直接打标签 不补点`~~
+
+
 
 ##### 3.2.2.1 越限
 

@@ -365,6 +365,10 @@ func (that *kafka2Tdb) SerializeThriftRecord(ctx api.StreamContext, record *thri
 //   - @return error                  错误信息
 func (that *kafka2Tdb) watch(ctx api.StreamContext, record map[string]interface{}) []map[string]interface{} {
 	records := make([]map[string]interface{}, 0, 2)
+	_, ok := record["Value_Sink"]
+	if !ok { // 过滤掉空值记录.
+		return records
+	}
 	records = append(records, record)
 
 	if actionObj, ok := record["Action_Sink"]; ok {
