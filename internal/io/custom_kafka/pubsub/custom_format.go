@@ -134,7 +134,7 @@ func (that *KafkaSourceMessage) Decode(b []byte) (interface{}, error) {
 		// }
 
 		rm := mapPool.Get().(map[string]interface{}) // 从Pool中获取一个map
-		rm["Action"] = "none"
+		// rm["Action"] = "none"
 		rm["DevCode"] = devCode
 		rm["Metric"] = metric
 		rm["DataType"] = dataType

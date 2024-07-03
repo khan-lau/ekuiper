@@ -112,7 +112,7 @@ func subscribe(r *redisSub, ctx api.StreamContext, consumer chan<- api.SourceTup
 	}
 }
 
-func getTuples(ctx api.StreamContext, r *redisSub, env interface{}) []api.SourceTuple {
+func getTuples(_ api.StreamContext, r *redisSub, env interface{}) []api.SourceTuple {
 	rcvTime := conf.GetNow()
 	msg, ok := env.(*redis.Message)
 	if !ok { // should never happen
