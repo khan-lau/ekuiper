@@ -123,6 +123,10 @@ func (m *kafka2Tdb) Collect(ctx api.StreamContext, item interface{}) error {
 			msgs := m.watch(ctx, msg) // 清洗数据, 因为有些情况要补记录, 所以可能会产生多条
 			for _, item := range msgs {
 				record := m.buildThriftRecord(ctx, item)
+				if nil == record {
+					logger.Debugf("msg [Value_Sink] is nil")
+					continue
+				}
 				encode, err := m.SerializeThriftRecord(ctx, record)
 				if err != nil {
 					logger.Error(err)
@@ -144,6 +148,10 @@ func (m *kafka2Tdb) Collect(ctx api.StreamContext, item interface{}) error {
 
 			for _, item := range msgs {
 				record := m.buildThriftRecord(ctx, item)
+				if nil == record {
+					logger.Debugf("msg [Value_Sink] is nil")
+					continue
+				}
 				encode, err := m.SerializeThriftRecord(ctx, record)
 				if err != nil {
 					logger.Error(err)
@@ -164,6 +172,10 @@ func (m *kafka2Tdb) Collect(ctx api.StreamContext, item interface{}) error {
 
 		for _, item := range msgs {
 			record := m.buildThriftRecord(ctx, item)
+			if nil == record {
+				logger.Debugf("msg [Value_Sink] is nil")
+				continue
+			}
 			encode, err := m.SerializeThriftRecord(ctx, record)
 			if err != nil {
 				logger.Error(err)
@@ -315,11 +327,15 @@ func (m *kafka2Tdb) parseHeaders(ctx api.StreamContext, data interface{}) ([]kaf
 
 // 构建thrift 消息结构
 func (that *kafka2Tdb) buildThriftRecord(_ api.StreamContext, msg map[string]interface{}) *thriftCommon.Record {
-	cell := &thriftCommon.Cell{Timestamp: msg["Time_Sink"].(int64), Value: msg["Value_Sink"].(float64)}
-	record := &thriftCommon.Record{}
-	record.Name = msg["DevCode_Sink"].(string) + ":" + msg["Metric_Sink"].(string)
-	record.Cells = []*thriftCommon.Cell{cell}
-	return record
+	if val, ok := msg["Value_Sink"]; ok { // 过滤掉空值
+		cell := &thriftCommon.Cell{Timestamp: msg["Time_Sink"].(int64), Value: val.(float64)}
+		record := &thriftCommon.Record{}
+		record.Name = msg["DevCode_Sink"].(string) + ":" + msg["Metric_Sink"].(string)
+		record.Cells = []*thriftCommon.Cell{cell}
+		return record
+	} else {
+		return nil
+	}
 }
 
 // 将common.Record序列化为[]byte
