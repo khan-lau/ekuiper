@@ -96,6 +96,10 @@ func (that *RedisSourceMessage) Decode(b []byte) (interface{}, error) {
 		pointValue := rs[1]
 
 		lastColonIndex := strings.LastIndex(point, ":")
+		if lastColonIndex < 0 {
+			decodeError = fmt.Errorf("invalid message format: %v", part)
+			continue
+		}
 		devCode := point[:lastColonIndex]
 		metric := point[lastColonIndex+1:]
 		pvs := strings.Split(pointValue, ":")
