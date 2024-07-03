@@ -173,6 +173,7 @@ type KuiperConf struct {
 		ConsoleLog          bool        `yaml:"consoleLog"`
 		FileLog             bool        `yaml:"fileLog"`
 		LogDisableTimestamp bool        `yaml:"logDisableTimestamp"`
+		DatetimeFormat      string      `yaml:"datetimeFormat"`
 		Syslog              *syslogConf `yaml:"syslog"`
 		RotateTime          int         `yaml:"rotateTime"`
 		MaxAge              int         `yaml:"maxAge"`
@@ -331,7 +332,18 @@ func InitConf() {
 		Config.Basic.LogLevel = InfoLogLevel
 	}
 	SetLogLevel(Config.Basic.LogLevel, Config.Basic.Debug)
+	// fmt.Printf("LogLevel: %s\n", Config.Basic.LogLevel)
+
 	SetLogFormat(Config.Basic.LogDisableTimestamp)
+	// fmt.Printf("disableTimestamp: %v\n", Config.Basic.LogDisableTimestamp)
+
+	// fmt.Printf("dateformat: %s\n", Config.Basic.DatetimeFormat)
+	// Config.Basic.DatetimeFormat = "2006-01-02 15:04:05.000"
+	if !Config.Basic.LogDisableTimestamp && len(Config.Basic.DatetimeFormat) > 0 {
+		// fmt.Printf("set dateformat: %s\n", Config.Basic.DatetimeFormat)
+		SetLogTimeFormat(Config.Basic.DatetimeFormat)
+	}
+
 	if err := SetConsoleAndFileLog(Config.Basic.ConsoleLog, Config.Basic.FileLog); err != nil {
 		log.Fatal(err)
 	}
@@ -396,7 +408,12 @@ func InitConf() {
 	_ = ValidateRuleOption(&Config.Rule)
 }
 
+func SetLogTimeFormat(timeformat string) {
+	Log.Formatter.(*logrus.TextFormatter).TimestampFormat = timeformat
+}
+
 func SetLogFormat(disableTimestamp bool) {
+
 	Log.Formatter.(*logrus.TextFormatter).DisableTimestamp = disableTimestamp
 }
 

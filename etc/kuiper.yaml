@@ -7,9 +7,13 @@ basic:
   consoleLog: false
   # true|false, if it's set to true, then the log will be print to log file
   fileLog: true
-  # Whether to disable the log timestamp, useful when output is redirected to logging
-  #	system like syslog that already adds timestamps.
+
+  # datetimeFormat
+  datetimeFormat: "2006-01-02 15:04:05.000"
+
+  # Whether to disable the log timestamp, useful when output is redirected to logging system like syslog that already adds timestamps.
   logDisableTimestamp: false
+
   # syslog settings
   syslog:
     # true|false, if it's set to true, then the log will be print to syslog
