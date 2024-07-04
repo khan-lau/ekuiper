@@ -201,7 +201,7 @@ if not exist .\\plugins\\wasm (
     +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
     +     "\\\"${out_metric}\\\" AS Metric_Sink, "
     +     "DataType AS DataType_Sink, "
-    +     "0 AS Adjust_Sink, "
+    +     "\\\"0\\\" AS Adjust_Sink, "
     +     "${aggregate_type}(Value) AS Value_Sink, "
     +     "window_end() AS Time_Sink "
         + "FROM ${source} "
@@ -258,7 +258,7 @@ if not exist .\\plugins\\wasm (
     +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
     +     "\\\"${out_metric}\\\" AS Metric_Sink, "
     +     "DataType AS DataType_Sink, "
-    +     "CASE Value WHEN Value ${than_operator} ${threshold} THEN 1 else 0 END AS Adjust_Sink, "
+    +     "CASE WHEN Value ${than_operator} ${threshold} THEN \\\"1\\\" else \\\"0\\\" END AS Adjust_Sink, "
     +     "${aggregate_type}(Value) AS Value_Sink, "
     +     "window_end() AS Time_Sink "
     + "FROM ${source} "
@@ -273,7 +273,7 @@ if not exist .\\plugins\\wasm (
     +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
     +     "\\\"${out_metric}\\\" AS Metric_Sink, "
     +     "DataType AS DataType_Sink, "
-    +     "CASE Value WHEN Value ${than_operator} ${threshold} THEN 0 else 1 END AS Adjust_Sink, "
+    +     "CASE WHEN Value ${than_operator} ${threshold} THEN \\\"0\\\" else \\\"1\\\" END AS Adjust_Sink, "
     +     "${aggregate_type}(Value) AS Value_Sink, "
     +     "window_end() AS Time_Sink "
     + "FROM ${source} "
@@ -295,7 +295,7 @@ SELECT
     "DTGZJK:BBGF" AS DevCode_Sink,
     "PWhD_C" AS Metric_Sink,
     DataType AS DataType_Sink,
-    CASE Value WHEN Value > 1000 THEN 0 else 1 END AS Adjust_Sink, ,
+    CASE WHEN Value > 1000 THEN "0" else "1" END AS Adjust_Sink, ,
     Sum(Value) AS Value_Sink,
     window_end() AS Time_Sink
 FROM custom_redisSub
@@ -353,7 +353,7 @@ SELECT
     "DTGZJK:BBGF" AS DevCode_Sink,
     "PWhD_C" AS Metric_Sink,
     DataType AS DataType_Sink,
-    5 AS Adjust_Sink,      -- 此处传递阈值
+    "5" AS Adjust_Sink,      -- 此处传递阈值
     Value AS Value_Sink
     window_end() AS Time_Sink
 FROM custom_redisSub
@@ -459,7 +459,7 @@ sql = "SELECT "
     +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
     +     "\\\"${out_metric}\\\" AS Metric_Sink, "
     +     "DataType AS DataType_Sink, "
-    +     "CASE Value WHEN max(Value) - min(Value) = 0 then 1 else 0 end AS Adjust_Sink, "
+    +     "CASE WHEN max(Value) - min(Value) = 0 then \\\"1\\\" else \\\"0\\\" end AS Adjust_Sink, "
     +     "Value AS Value_Sink, "
     +     "window_end() AS Time_Sink "
     + "FROM ${source}  "
@@ -476,7 +476,7 @@ sql = "SELECT "
     +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
     +     "\\\"${out_metric}\\\" AS Metric_Sink, "
     +     "DataType AS DataType_Sink, "
-    +     "CASE Value WHEN max(Value) - min(Value) = 0 then 0 else 1 end AS Adjust_Sink, "
+    +     "CASE WHEN max(Value) - min(Value) = 0 then \\\"0\\\" else \\\"1\\\" end AS Adjust_Sink, "
     +     "Value AS Value_Sink, "
     +     "window_end() AS Time_Sink "
     + "FROM ${source}  "
@@ -498,7 +498,7 @@ sql = "SELECT "
     +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
     +     "\\\"${out_metric}\\\" AS Metric_Sink, "
     +     "DataType AS DataType_Sink, "
-    +     " CASE Value WHEN max(Value) - min(Value) = 0 then 1 else 0 end AS Adjust_Sink, "
+    +     " CASE WHEN max(Value) - min(Value) = 0 then \\\"1\\\" else \\\"0\\\" end AS Adjust_Sink, "
     +     "Value AS Value_Sink, "
     +     "window_end() AS Time_Sink "
     + "FROM ${source}  "
@@ -514,7 +514,7 @@ sql = "SELECT "
     +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
     +     "\\\"${out_metric}\\\" AS Metric_Sink, "
     +     "DataType AS DataType_Sink, "
-    +     "CASE Value WHEN max(Value) - min(Value) = 0 then 0 else 1 end AS Adjust_Sink, "
+    +     "CASE WHEN max(Value) - min(Value) = 0 then \\\"0\\\" else \\\"1\\\" end AS Adjust_Sink, "
     +     "Value AS Value_Sink, "
     +     "window_end() AS Time_Sink "
     + "FROM ${source}  "
@@ -545,7 +545,7 @@ sql = "SELECT "
     +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
     +     "\\\"${out_metric}\\\" AS Metric_Sink, "
     +     "DataType AS DataType_Sink, "
-    +     "1 AS Adjust_Sink, "
+    +     "\\\"1\\\" AS Adjust_Sink, "
     +     "Value AS Value_Sink, "
     +     "window_end() AS Time_Sink "
     + "FROM ${source} " 

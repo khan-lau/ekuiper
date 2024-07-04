@@ -128,9 +128,11 @@ func (m *kafkaPub) Collect(ctx api.StreamContext, item interface{}) error {
 		for _, msg := range trandatas {
 			encode, err := kafkaMessage.Encode(msg)
 			if err != nil {
+				logger.Infof("test error msg - %#v", msg)
 				logger.Error(err)
 				continue
 			}
+			logger.Infof("test msg - %#v", msg)
 			kafkaMsg, err := m.buildMsg(ctx, msg, []byte(encode))
 
 			if err != nil {
@@ -145,9 +147,11 @@ func (m *kafkaPub) Collect(ctx api.StreamContext, item interface{}) error {
 		for _, msg := range d {
 			encode, err := kafkaMessage.Encode(msg)
 			if err != nil {
+				logger.Infof("[] test error msg - %#v", msg)
 				logger.Error(err)
 				continue
 			}
+			logger.Infof("[] test msg - %#v", msg)
 			kafkaMsg, err := m.buildMsg(ctx, msg, []byte(encode))
 
 			// // 解析slink收到的内容, 编码为[]byte

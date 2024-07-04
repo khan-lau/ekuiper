@@ -425,9 +425,9 @@ func (that *kafka2Tdb) watch(ctx api.StreamContext, record map[string]interface{
 
 // 累加跳变清洗并补点
 //   - @return map[string]interface{} 清洗后的记录
-func (that *kafka2Tdb) incJumpWash(_ api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
+func (that *kafka2Tdb) incJumpWash(ctx api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
 	records := make([]map[string]interface{}, 0, 1)
-
+	logger := ctx.GetLogger()
 	// 如果缓存中有数据，则进行跳变清洗
 	if oldVal, ok := that.tags["Value_Sink"]; ok {
 		if oldTime, ok := that.tags["Time_Sink"]; ok {
@@ -438,7 +438,10 @@ func (that *kafka2Tdb) incJumpWash(_ api.StreamContext, record map[string]interf
 
 			val := record["Value_Sink"].(float64)
 			timestamp, _ := strconv.ParseInt(record["Time_Sink"].(string), 10, 64)
-			threshold := record["Adjust_Sink"].(float64)
+			threshold, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
+			if nil != err {
+				logger.Error(err)
+			}
 
 			if (math.Abs(val-oldValFloat) / math.Abs(float64(timestamp-oldTimeInt)/1000)) > threshold { // 如果跳变
 				offset = (oldValFloat - val) + offset
@@ -470,8 +473,9 @@ func (that *kafka2Tdb) incJumpWash(_ api.StreamContext, record map[string]interf
 
 // 累加指标跳变过滤
 //   - @return map[string]interface{} 过滤出来的记录
-func (that *kafka2Tdb) incJumpFilter(_ api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
+func (that *kafka2Tdb) incJumpFilter(ctx api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
 	records := make([]map[string]interface{}, 0, 1)
+	logger := ctx.GetLogger()
 
 	// 如果缓存中有数据，则进行跳变清洗
 	if oldVal, ok := that.tags["Value_Sink"]; ok {
@@ -483,8 +487,10 @@ func (that *kafka2Tdb) incJumpFilter(_ api.StreamContext, record map[string]inte
 
 			val := record["Value_Sink"].(float64)
 			timestamp, _ := strconv.ParseInt(record["Time_Sink"].(string), 10, 64)
-			threshold := record["Adjust_Sink"].(float64)
-
+			threshold, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
+			if nil != err {
+				logger.Error(err)
+			}
 			if (math.Abs(val-oldValFloat) / math.Abs(float64(timestamp-oldTimeInt)/1000)) > threshold { // 如果跳变
 				offset = (oldValFloat - val) + offset
 				that.tags["offset"] = offset
@@ -515,8 +521,9 @@ func (that *kafka2Tdb) incJumpFilter(_ api.StreamContext, record map[string]inte
 
 // 跳变清洗函数
 //   - @return map[string]interface{} 清洗后的记录
-func (that *kafka2Tdb) jumpWash(_ api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
+func (that *kafka2Tdb) jumpWash(ctx api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
 	records := make([]map[string]interface{}, 0, 1)
+	logger := ctx.GetLogger()
 	// 如果缓存中有数据，则进行跳变清洗
 	if oldVal, ok := that.tags["Value_Sink"]; ok {
 		if oldTime, ok := that.tags["Time_Sink"]; ok {
@@ -526,7 +533,10 @@ func (that *kafka2Tdb) jumpWash(_ api.StreamContext, record map[string]interface
 
 			val := record["Value_Sink"].(float64)
 			timestamp, _ := strconv.ParseInt(record["Time_Sink"].(string), 10, 64)
-			threshold := record["Adjust_Sink"].(float64)
+			threshold, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
+			if nil != err {
+				logger.Error(err)
+			}
 
 			if (math.Abs(val-oldValFloat) / math.Abs(float64(timestamp-oldTimeInt)/1000)) > threshold { // 如果越限
 				record["Value_Sink"] = oldValFloat // 补偿为前一个值
@@ -551,8 +561,10 @@ func (that *kafka2Tdb) jumpWash(_ api.StreamContext, record map[string]interface
 
 // 跳变过滤函数
 //   - @return map[string]interface{} 清洗后的记录
-func (that *kafka2Tdb) jumpFilter(_ api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
+func (that *kafka2Tdb) jumpFilter(ctx api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
 	records := make([]map[string]interface{}, 0, 1)
+	logger := ctx.GetLogger()
+
 	// 如果缓存中有数据，则进行跳变清洗
 	if oldVal, ok := that.tags["Value_Sink"]; ok {
 		if oldTime, ok := that.tags["Time_Sink"]; ok {
@@ -562,8 +574,10 @@ func (that *kafka2Tdb) jumpFilter(_ api.StreamContext, record map[string]interfa
 
 			val := record["Value_Sink"].(float64)
 			timestamp, _ := strconv.ParseInt(record["Time_Sink"].(string), 10, 64)
-			threshold := record["Adjust_Sink"].(float64)
-
+			threshold, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
+			if nil != err {
+				logger.Error(err)
+			}
 			if (math.Abs(val-oldValFloat) / math.Abs(float64(timestamp-oldTimeInt)/1000)) > threshold { // 如果越限
 				that.tags["Value_Sink"] = oldValFloat // 更新缓存中的值
 				that.tags["Time_Sink"] = timestamp    // 更新缓存中的时间戳
@@ -588,14 +602,19 @@ func (that *kafka2Tdb) jumpFilter(_ api.StreamContext, record map[string]interfa
 //   - @param cfg *ini.File 规则配置项
 //   - @return map[string]interface{} 处理后的记录
 func (that *kafka2Tdb) deadWash(ctx api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
+	logger := ctx.GetLogger()
+	records := make([]map[string]interface{}, 0, 1)
 	val := record["Value_Sink"].(float64)
 	timestamp := record["Time_Sink"].(int64)
-	flagVal := record["Adjust_Sink"].(float64)
+	flagVal, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
+	if nil != err {
+		logger.Error(err)
+		return records
+	}
 
-	records := make([]map[string]interface{}, 0, 1)
 	flag := Round(flagVal) == 1 // 0: 丢弃, 1: 输出
 	if !flag {
-		ctx.GetLogger().Warnf("deadWatcch ignore value: %d, %f", timestamp, val)
+		logger.Warnf("deadWatcch ignore value: %d, %f", timestamp, val)
 		return records
 	}
 
@@ -609,14 +628,19 @@ func (that *kafka2Tdb) deadWash(ctx api.StreamContext, record map[string]interfa
 //   - @param cfg *ini.File 规则配置项
 //   - @return map[string]interface{} 处理后的记录
 func (m *kafka2Tdb) outLimitWash(ctx api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
+	logger := ctx.GetLogger()
+	records := make([]map[string]interface{}, 0, 1)
 	val := record["Value_Sink"].(float64)
 	timestamp := record["Time_Sink"].(int64)
-	flagVal := record["Adjust_Sink"].(float64)
+	flagVal, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
+	if nil != err {
+		logger.Error(err)
+		return records
+	}
 
-	records := make([]map[string]interface{}, 0, 1)
 	flag := Round(flagVal) == 1 // 0: 丢弃, 1: 输出
 	if !flag {
-		ctx.GetLogger().Warnf("outLimitWatcch ignore value: %d, %f", timestamp, val)
+		logger.Warnf("outLimitWatcch ignore value: %d, %f", timestamp, val)
 		return records
 	}
 

@@ -171,7 +171,7 @@ func (that *RedisSinkMessage) GetSchemaJson() string {
 		"DevCode_Sink": {"type": "string"},
 		"Metric_Sink": {"type": "string"},
 		"DataType_Sink": {"type": "string"},
-		"Adjust_Sink": {"type": "float"},
+		"Adjust_Sink": {"type": "string"},
 		"Value_Sink": {"type": "float"},
 		"Time_Sink": {"type": "string"}
 	}`
