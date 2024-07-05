@@ -492,7 +492,7 @@ func registerDateTimeFunc() {
 		fType: ast.FuncTypeScalar,
 
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			seconds, err := cast.ToInt(args[0], cast.STRICT)
+			seconds, err := cast.ToInt64(args[0], cast.STRICT)
 			if err != nil {
 				return err, false
 			}
@@ -520,7 +520,7 @@ func registerDateTimeFunc() {
 				return errors.New("invalid start time"), false
 			}
 
-			paramEnd, err := cast.ToInt(args[1], cast.STRICT)
+			paramEnd, err := cast.ToInt(args[2], cast.STRICT)
 			if err != nil {
 				return err, false
 			}
@@ -532,15 +532,20 @@ func registerDateTimeFunc() {
 				return errors.New("invalid end time"), false
 			}
 
-			if endHour < startHour || (endHour == startHour && endMinute < startMinute) || (endHour == startHour && endMinute == startMinute && endSecond < startSecond) {
+			localHour := t.Local().Hour()
+			localMin := t.Local().Minute()
+			localSec := t.Local().Second()
+
+			startClock := startSecond + startMinute*60 + startHour*3600
+			endClock := endSecond + endMinute*60 + endHour*3600
+			currClock := localSec + localMin*60 + localHour*3600
+
+			if endClock < startClock {
 				return errors.New("end time must be later than start time"), false
 			}
 
 			result := false
-			if (t.Local().Hour() >= startHour && t.Local().Hour() <= endHour) &&
-				(t.Local().Minute() >= startMinute && t.Local().Minute() <= endMinute) &&
-				(t.Local().Second() >= startSecond && t.Local().Second() <= endSecond) {
-
+			if currClock >= startClock && currClock <= endClock {
 				result = true
 			}
 
@@ -552,9 +557,9 @@ func registerDateTimeFunc() {
 			if err := ValidateLen(3, len(args)); err != nil { // 检查参数数量
 				return err
 			}
-			// if ast.IsNumericArg(args[0]) || ast.IsStringArg(args[0]) || ast.IsBooleanArg(args[0]) { // 第一个参数 int
-			if ast.IsFloatArg(args[0]) || ast.IsStringArg(args[0]) || ast.IsBooleanArg(args[0]) { // 第一个参数 int
-				return ProduceErrInfo(0, "int")
+			// if ast.IsNumericArg(args[0]) || ast.IsStringArg(args[0]) || ast.IsBooleanArg(args[0]) { // 第一个参数 int64
+			if ast.IsFloatArg(args[0]) || ast.IsStringArg(args[0]) || ast.IsBooleanArg(args[0]) { // 第一个参数 int64
+				return ProduceErrInfo(0, "int64")
 			}
 
 			if ast.IsFloatArg(args[1]) || ast.IsStringArg(args[1]) || ast.IsBooleanArg(args[1]) { // 第2个参数 int "80000"

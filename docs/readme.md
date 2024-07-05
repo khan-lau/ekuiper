@@ -295,7 +295,7 @@ SELECT
     "DTGZJK:BBGF" AS DevCode_Sink,
     "PWhD_C" AS Metric_Sink,
     DataType AS DataType_Sink,
-    CASE WHEN Value > 1000 THEN "0" else "1" END AS Adjust_Sink, ,
+    CASE WHEN Value > 1000 THEN "0" else "1" END AS Adjust_Sink,
     Sum(Value) AS Value_Sink,
     window_end() AS Time_Sink
 FROM custom_redisSub

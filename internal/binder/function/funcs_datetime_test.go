@@ -32,6 +32,90 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
+func TestCustomFunctions(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+
+	tests := []struct {
+		// testCaseName represent the name of the test case
+		testCaseName string
+		// funcName represent the SQL function name to be tested
+		funcName string
+		// execArgs represent the arguments to be passed to the function
+		execArgs []interface{}
+		// valFunc represent the function to validate the result
+		valFunc func(t interface{}) error
+		// execTest represent whether to test the exec function
+		execTest bool
+		// valArgs represent the arguments to be passed to the builtinFunc.val
+		valArgs []ast.Expr
+	}{
+		{
+			// SELECT x_timestamp_in_duration(1720132634, 0, 70000) //2 024-07-05 06:37:14
+			// FROM custom_redisSub
+			testCaseName: "test x_timestamp_in_duration(time, 0, 70000) with no args",
+			funcName:     "x_timestamp_in_duration",
+			execTest:     true,
+			execArgs:     []interface{}{1720132634, 0, 70000},
+			valFunc: func(ret interface{}) error {
+				parsed, _ := ret.(bool)
+				t.Logf("result %v\n", parsed)
+
+				return nil
+			},
+		},
+
+		{
+			// SELECT x_timestamp_in_duration(1717540634, 0, 70000) // 2024-06-05 06:37:14
+			// FROM custom_redisSub
+			testCaseName: "test x_timestamp_in_duration(time, 0, 70000) with no args",
+			funcName:     "x_timestamp_in_duration",
+			execTest:     true,
+			execArgs:     []interface{}{1717540634, 0, 70000},
+			valFunc: func(ret interface{}) error {
+				parsed, _ := ret.(bool)
+				t.Logf("result %v\n", parsed)
+
+				return nil
+			},
+		},
+
+		{
+			// SELECT x_timestamp_in_duration(1717544234, 0, 70000) // 2024-06-05 07:37:14
+			// FROM custom_redisSub
+			testCaseName: "test x_timestamp_in_duration(time, 0, 70000) with no args",
+			funcName:     "x_timestamp_in_duration",
+			execTest:     true,
+			execArgs:     []interface{}{1717544234, 0, 70000},
+			valFunc: func(ret interface{}) error {
+				parsed, _ := ret.(bool)
+				t.Logf("result %v\n", parsed)
+
+				return nil
+			},
+		},
+	}
+
+	for _, test := range tests {
+		f, ok := builtins[test.funcName]
+		if !ok {
+			t.Fatalf("builtin '%s' not found", test.funcName)
+		}
+
+		var result interface{}
+		if test.execTest {
+			result, _ = f.exec(fctx, test.execArgs)
+		} else {
+			result = f.val(fctx, test.valArgs)
+		}
+		if err := test.valFunc(result); err != nil {
+			t.Errorf("\n%s: %q", test.testCaseName, err)
+		}
+	}
+}
+
 // TestDateTimeFunctions test the date and time functions.
 func TestDateTimeFunctions(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "testExec")
