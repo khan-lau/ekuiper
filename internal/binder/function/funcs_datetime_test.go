@@ -53,7 +53,7 @@ func TestCustomFunctions(t *testing.T) {
 		valArgs []ast.Expr
 	}{
 		{
-			// SELECT x_timestamp_in_duration(1720132634, 0, 70000) //2 024-07-05 06:37:14
+			// SELECT x_timestamp_in_duration(1720132634, 0, 70000) //2024-07-05 06:37:14
 			// FROM custom_redisSub
 			testCaseName: "test x_timestamp_in_duration(time, 0, 70000) with no args",
 			funcName:     "x_timestamp_in_duration",
@@ -61,7 +61,7 @@ func TestCustomFunctions(t *testing.T) {
 			execArgs:     []interface{}{1720132634, 0, 70000},
 			valFunc: func(ret interface{}) error {
 				parsed, _ := ret.(bool)
-				t.Logf("result %v\n", parsed)
+				t.Logf("x_timestamp_in_duration(time, 0, 70000) 2024-07-05 06:37:14 result %v\n", parsed)
 
 				return nil
 			},
@@ -76,7 +76,7 @@ func TestCustomFunctions(t *testing.T) {
 			execArgs:     []interface{}{1717540634, 0, 70000},
 			valFunc: func(ret interface{}) error {
 				parsed, _ := ret.(bool)
-				t.Logf("result %v\n", parsed)
+				t.Logf("x_timestamp_in_duration(time, 0, 70000) 2024-06-05 06:37:14 result %v\n", parsed)
 
 				return nil
 			},
@@ -91,7 +91,7 @@ func TestCustomFunctions(t *testing.T) {
 			execArgs:     []interface{}{1717544234, 0, 70000},
 			valFunc: func(ret interface{}) error {
 				parsed, _ := ret.(bool)
-				t.Logf("result %v\n", parsed)
+				t.Logf(" x_timestamp_in_duration(1717544234, 0, 70000) 2024-06-05 07:37:14 result %v\n", parsed)
 
 				return nil
 			},
