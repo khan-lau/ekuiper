@@ -505,7 +505,8 @@ func registerDateTimeFunc() {
 			if seconds <= 9999999999 { // 10位时间戳, 精确到s
 				t = time.Unix(int64(seconds), 0).In(cast.GetConfiguredTimeZone())
 			} else { // 13位时间戳, 精确到ms
-				t = time.Unix(0, int64(seconds)).In(cast.GetConfiguredTimeZone())
+				t = time.UnixMilli(int64(seconds)).In(cast.GetConfiguredTimeZone())
+				// t = time.Unix(0, int64(seconds)).In(cast.GetConfiguredTimeZone())
 			}
 
 			paramStart, err := cast.ToInt(args[1], cast.STRICT)

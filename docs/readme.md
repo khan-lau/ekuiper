@@ -221,6 +221,8 @@ if not exist .\\plugins\\wasm (
 
 
 #### 3.2.2 数据清洗规则管理
+
+概念定义:
 * `越限`     处理方式: 删除 或 补点, 补点规则见备注
   - 1. 点的值大于或小于 `指定值`;            
 * `跳变`     处理方式: 删除 或 补点, 补点规则见备注
@@ -558,7 +560,7 @@ sql = "SELECT "
   - `start` 开始时间 120000 int型 表示 12点整
   - `end`   结束时间 123010 int型 表示 12点30分10秒
 
-> `x_timestamp_in_duration` 判断时间戳是否在指定的闹钟范围内
+> `x_timestamp_in_duration` 判断时间戳是否在指定的闹钟范围内, `左开右开`
 > `x_from_timestamp` 自定义函数, 将10位精确到s的时间戳 或 13位精确到ms的时间戳转换位date类型
 > Action_Sink 固定值为 `"proc=jump \n proc.filter=in"`
 
