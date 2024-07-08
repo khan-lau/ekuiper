@@ -9,7 +9,7 @@ basic:
   fileLog: true
 
   # datetimeFormat
-  datetimeFormat: "2006-01-02 15:04:05.000"
+  # datetimeFormat: "2006-01-02 15:04:05.000"
 
   # Whether to disable the log timestamp, useful when output is redirected to logging system like syslog that already adds timestamps.
   logDisableTimestamp: false

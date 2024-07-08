@@ -15,7 +15,7 @@
 package custom_memory
 
 func GetSink() *sink {
-	return &sink{}
+	return &sink{tags: make(map[string]interface{})}
 }
 
 func GetSource() *source {

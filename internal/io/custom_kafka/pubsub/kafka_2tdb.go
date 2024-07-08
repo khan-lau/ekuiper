@@ -437,7 +437,7 @@ func (that *kafka2Tdb) incJumpWash(ctx api.StreamContext, record map[string]inte
 			offset := that.tags["offset"].(float64)
 
 			val := record["Value_Sink"].(float64)
-			timestamp, _ := strconv.ParseInt(record["Time_Sink"].(string), 10, 64)
+			timestamp := int64(record["Time_Sink"].(float64))
 			threshold, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
 			if nil != err {
 				logger.Error(err)
@@ -463,7 +463,7 @@ func (that *kafka2Tdb) incJumpWash(ctx api.StreamContext, record map[string]inte
 		}
 	} else { // 首次 记录当前值与时间戳到缓存
 		that.tags["Value_Sink"] = record["Value_Sink"]
-		timestamp, _ := strconv.ParseInt(record["Time_Sink"].(string), 10, 64)
+		timestamp := int64(record["Time_Sink"].(float64))
 		that.tags["Time_Sink"] = timestamp
 		that.tags["offset"] = 0.0
 	}
@@ -486,7 +486,7 @@ func (that *kafka2Tdb) incJumpFilter(ctx api.StreamContext, record map[string]in
 			offset := that.tags["offset"].(float64)
 
 			val := record["Value_Sink"].(float64)
-			timestamp, _ := strconv.ParseInt(record["Time_Sink"].(string), 10, 64)
+			timestamp := int64(record["Time_Sink"].(float64))
 			threshold, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
 			if nil != err {
 				logger.Error(err)
@@ -511,7 +511,7 @@ func (that *kafka2Tdb) incJumpFilter(ctx api.StreamContext, record map[string]in
 		}
 	} else { // 首次 记录当前值与时间戳到缓存
 		that.tags["Value_Sink"] = record["Value_Sink"]
-		timestamp, _ := strconv.ParseInt(record["Time_Sink"].(string), 10, 64)
+		timestamp := int64(record["Time_Sink"].(float64))
 		that.tags["Time_Sink"] = timestamp
 		that.tags["offset"] = 0.0
 	}
@@ -532,7 +532,7 @@ func (that *kafka2Tdb) jumpWash(ctx api.StreamContext, record map[string]interfa
 			oldTimeInt := oldTime.(int64)
 
 			val := record["Value_Sink"].(float64)
-			timestamp, _ := strconv.ParseInt(record["Time_Sink"].(string), 10, 64)
+			timestamp := int64(record["Time_Sink"].(float64))
 			threshold, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
 			if nil != err {
 				logger.Error(err)
@@ -552,7 +552,7 @@ func (that *kafka2Tdb) jumpWash(ctx api.StreamContext, record map[string]interfa
 		}
 	} else { // 否则记录当前值与时间戳到缓存
 		that.tags["Value_Sink"] = record["Value_Sink"]
-		timestamp, _ := strconv.ParseInt(record["Time_Sink"].(string), 10, 64)
+		timestamp := int64(record["Time_Sink"].(float64))
 		that.tags["Time_Sink"] = timestamp
 	}
 	records = append(records, record)
@@ -573,7 +573,7 @@ func (that *kafka2Tdb) jumpFilter(ctx api.StreamContext, record map[string]inter
 			oldTimeInt := oldTime.(int64)
 
 			val := record["Value_Sink"].(float64)
-			timestamp, _ := strconv.ParseInt(record["Time_Sink"].(string), 10, 64)
+			timestamp := int64(record["Time_Sink"].(float64))
 			threshold, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
 			if nil != err {
 				logger.Error(err)
@@ -590,7 +590,7 @@ func (that *kafka2Tdb) jumpFilter(ctx api.StreamContext, record map[string]inter
 		}
 	} else { // 否则记录当前值与时间戳到缓存
 		that.tags["Value_Sink"] = record["Value_Sink"]
-		timestamp, _ := strconv.ParseInt(record["Time_Sink"].(string), 10, 64)
+		timestamp := int64(record["Time_Sink"].(float64))
 		that.tags["Time_Sink"] = timestamp
 	}
 	return records
@@ -605,7 +605,7 @@ func (that *kafka2Tdb) deadWash(ctx api.StreamContext, record map[string]interfa
 	logger := ctx.GetLogger()
 	records := make([]map[string]interface{}, 0, 1)
 	val := record["Value_Sink"].(float64)
-	timestamp := record["Time_Sink"].(int64)
+	timestamp := int64(record["Time_Sink"].(float64))
 	flagVal, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
 	if nil != err {
 		logger.Error(err)
@@ -631,7 +631,7 @@ func (m *kafka2Tdb) outLimitWash(ctx api.StreamContext, record map[string]interf
 	logger := ctx.GetLogger()
 	records := make([]map[string]interface{}, 0, 1)
 	val := record["Value_Sink"].(float64)
-	timestamp := record["Time_Sink"].(int64)
+	timestamp := int64(record["Time_Sink"].(float64))
 	flagVal, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
 	if nil != err {
 		logger.Error(err)
