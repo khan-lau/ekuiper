@@ -154,6 +154,8 @@ if not exist .\\plugins\\wasm (
   - 1.9 新增 `custom_kafkaSub` 内置 source, 经过该source的 `time时间戳字段` `精确到ms`
   - 1.10 新增 `custom_kafka_2tdb` 内置sink, 经过该sink的数据会被`清洗`或`过滤`后使用`thrift 0.15.0`格式通过`TSDBRpc`平台 `存储`到时序库
   - 1.11 新增 `聚合函数` `get_value(col, index)`  获取指定字段指定索引的值
+  - 1.12 新增 `custom_memoryPub` 内置 sink, , 经过该sink的数据会被`清洗`或`过滤`
+  - 1.13 新增 `custom_memorySub` 内置 source, 经过该source的 `time时间戳字段` `精确到ms`
 2. `custom_redisSub` 处理后的数据格式 见`备注1`
 
 
