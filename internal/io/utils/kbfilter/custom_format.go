@@ -27,7 +27,7 @@ func (that *CustomSourceMessage) GetSchemaJson() string {
 		"DevCode": {"type": "string"},
 		"Metric": {"type": "string"},
 		"DataType": {"type": "string"},
-		"Adjust": {"type": "float"},
+		"Adjust": {"type": "string"},
 		"Value": {"type": "float"},
 		"Time": {"type": "string"}
 	}`
@@ -206,5 +206,5 @@ func (that *CustomSinkMessage) Encode(d interface{}) (string, error) {
 ///////////////////////////////////////////////////////////////
 
 func GetCustomSourceMessage() interface{} {
-	return &CustomSinkMessage{}
+	return &CustomSourceMessage{}
 }
