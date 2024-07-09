@@ -26,6 +26,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/lf-edge/ekuiper/internal/compressor"
+	"github.com/lf-edge/ekuiper/internal/io/utils/kbfilter"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/message"
@@ -127,7 +128,7 @@ func (r *redisPub) collectWithChannel(ctx api.StreamContext, item interface{}, c
 			return err
 		}
 
-		redisMessage := RedisSinkMessage{}
+		redisMessage := kbfilter.CustomSinkMessage{}
 		for _, trandata := range trandatas {
 			encode, err := redisMessage.Encode(trandata)
 			if err != nil {
@@ -138,7 +139,7 @@ func (r *redisPub) collectWithChannel(ctx api.StreamContext, item interface{}, c
 		}
 		r.mux.Unlock()
 	case []map[string]interface{}:
-		redisMessage := RedisSinkMessage{}
+		redisMessage := kbfilter.CustomSinkMessage{}
 		r.mux.Lock()
 		for _, trandata := range d {
 			encode, err := redisMessage.Encode(trandata)
@@ -150,7 +151,7 @@ func (r *redisPub) collectWithChannel(ctx api.StreamContext, item interface{}, c
 		}
 		r.mux.Unlock()
 	case map[string]interface{}:
-		redisMessage := RedisSinkMessage{}
+		redisMessage := kbfilter.CustomSinkMessage{}
 		r.mux.Lock()
 		encode, err := redisMessage.Encode(d)
 		if err != nil {

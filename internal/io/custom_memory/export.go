@@ -14,8 +14,10 @@
 
 package custom_memory
 
+import "github.com/lf-edge/ekuiper/internal/io/utils/kbfilter"
+
 func GetSink() *sink {
-	return &sink{tags: make(map[string]interface{})}
+	return &sink{filter: kbfilter.NewSinkFilterAction()}
 }
 
 func GetSource() *source {

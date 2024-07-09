@@ -10,6 +10,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io"
 	"github.com/lf-edge/ekuiper/internal/io/custom_kafka"
+	"github.com/lf-edge/ekuiper/internal/io/utils/kbfilter"
 	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -165,7 +166,7 @@ func (s *kafkaSub) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, 
 
 		// built-in decode
 		payload := msg.Value
-		kafkaFormat := GetKafkaSourceMessage().(message.Converter)
+		kafkaFormat := kbfilter.GetCustomSourceMessage().(message.Converter)
 		resultsAny, err := kafkaFormat.Decode(payload)
 		if resultsAny == nil || err != nil {
 			return

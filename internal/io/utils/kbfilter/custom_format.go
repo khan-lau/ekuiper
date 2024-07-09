@@ -1,27 +1,26 @@
-package pubsub
+package kbfilter
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
 	"sync"
-	"unsafe"
 
+	"github.com/lf-edge/ekuiper/internal/io/utils"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/mitchellh/mapstructure"
 )
 
-type RedisSourceMessage struct {
+type CustomSourceMessage struct {
 	Action   string  `json:"action"`   // 扩展指令
 	DevCode  string  `json:"devCode"`  // 设备代码
 	Metric   string  `json:"metric"`   // 指标
-	DataType string  `json:"dataType"` // 数据类型
 	Adjust   string  `json:"adjust"`   // 校准值
+	DataType string  `json:"dataType"` // 数据类型
 	Value    float64 `json:"value"`    // 值
 	Time     int64   `json:"time"`     // 时间戳
 }
 
-func (that *RedisSourceMessage) GetSchemaJson() string {
+func (that *CustomSourceMessage) GetSchemaJson() string {
 	// return a static schema
 	return `{
 		"Action": {"type": "string"},
@@ -34,7 +33,7 @@ func (that *RedisSourceMessage) GetSchemaJson() string {
 	}`
 }
 
-func (that *RedisSourceMessage) Encode(d interface{}) ([]byte, error) {
+func (that *CustomSourceMessage) Encode(d interface{}) ([]byte, error) {
 	var builder strings.Builder
 
 	switch dt := d.(type) {
@@ -57,8 +56,8 @@ func (that *RedisSourceMessage) Encode(d interface{}) ([]byte, error) {
 	}
 }
 
-func (that *RedisSourceMessage) encodeSingleMap(item map[string]interface{}) ([]byte, error) {
-	err := MapToStructStrict(item, that)
+func (that *CustomSourceMessage) encodeSingleMap(item map[string]interface{}) ([]byte, error) {
+	err := utils.MapToStructStrict(item, that)
 	if err != nil {
 		return nil, err
 	}
@@ -67,11 +66,11 @@ func (that *RedisSourceMessage) encodeSingleMap(item map[string]interface{}) ([]
 	return []byte(fmt.Sprintf("%s:%s@%s:%s:%s", that.DevCode, that.Metric, that.DataType, Value_Sink, Time_Sink)), nil
 }
 
-func (that *RedisSourceMessage) Decode(b []byte) (interface{}, error) {
+func (that *CustomSourceMessage) Decode(b []byte) (interface{}, error) {
 	if len(b) == 0 {
 		return nil, fmt.Errorf("input byte slice is empty")
 	}
-	strData := byteSliceToString(b)
+	strData := utils.ByteSliceToString(b)
 
 	parts := strings.Split(strData, ",")
 	resultMsgs := make([]map[string]interface{}, 0, len(parts)) // 预分配切片容量
@@ -154,7 +153,7 @@ func (that *RedisSourceMessage) Decode(b []byte) (interface{}, error) {
 
 ///////////////////////////////////////////////////////////////
 
-type RedisSinkMessage struct {
+type CustomSinkMessage struct {
 	Action_Sink   string  `json:"Action_Sink"`
 	DevCode_Sink  string  `json:"DevCode_Sink"`
 	Metric_Sink   string  `json:"Metric_Sink"`
@@ -164,7 +163,7 @@ type RedisSinkMessage struct {
 	Time_Sink     int64   `json:"Time_Sink"`
 }
 
-func (that *RedisSinkMessage) GetSchemaJson() string {
+func (that *CustomSinkMessage) GetSchemaJson() string {
 	// return a static schema
 	return `{
 		"Action_Sink": {"type": "string"},"
@@ -179,10 +178,10 @@ func (that *RedisSinkMessage) GetSchemaJson() string {
 
 // DTHYJK:NSFC:Q1:W001:WNAC_WdSpd@s:value:timestamp(unixmilli)
 // @f;@s;@b
-func (that *RedisSinkMessage) Encode(d interface{}) (string, error) {
+func (that *CustomSinkMessage) Encode(d interface{}) (string, error) {
 	switch r := d.(type) {
 	case map[string]interface{}:
-		err := MapToStructStrict(r, that)
+		err := utils.MapToStructStrict(r, that)
 		if err != nil {
 			return "", err
 		}
@@ -206,25 +205,6 @@ func (that *RedisSinkMessage) Encode(d interface{}) (string, error) {
 
 ///////////////////////////////////////////////////////////////
 
-func MapToStructStrict(input, output interface{}) error {
-	config := &mapstructure.DecoderConfig{
-		ErrorUnused: true,
-		TagName:     "json",
-		Result:      output,
-	}
-	decoder, err := mapstructure.NewDecoder(config)
-	if err != nil {
-		return err
-	}
-
-	return decoder.Decode(input)
-}
-
-func GetRedisSourceMessage() interface{} {
-	return &RedisSourceMessage{}
-}
-
-// byteSliceToString直接将[]byte转换为string，避免额外的内存分配
-func byteSliceToString(b []byte) string {
-	return *(*string)(unsafe.Pointer(&b))
+func GetCustomSourceMessage() interface{} {
+	return &CustomSinkMessage{}
 }

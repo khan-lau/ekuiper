@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io"
+	"github.com/lf-edge/ekuiper/internal/io/utils/kbfilter"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -136,7 +137,7 @@ func getTuples(_ api.StreamContext, r *redisSub, env interface{}) []api.SourceTu
 	}
 
 	// built-in decode
-	redisFormat := GetRedisSourceMessage().(message.Converter)
+	redisFormat := kbfilter.GetCustomSourceMessage().(message.Converter)
 	resultsAny, err := redisFormat.Decode(payload)
 	if resultsAny == nil || err != nil {
 		return []api.SourceTuple{}

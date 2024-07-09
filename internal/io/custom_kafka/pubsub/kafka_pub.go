@@ -8,6 +8,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/custom_kafka"
+	"github.com/lf-edge/ekuiper/internal/io/utils/kbfilter"
 	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -124,7 +125,7 @@ func (m *kafkaPub) Collect(ctx api.StreamContext, item interface{}) error {
 			return err
 		}
 
-		kafkaMessage := KafkaSinkMessage{}
+		kafkaMessage := kbfilter.CustomSinkMessage{}
 		for _, msg := range trandatas {
 			encode, err := kafkaMessage.Encode(msg)
 			if err != nil {
@@ -143,7 +144,7 @@ func (m *kafkaPub) Collect(ctx api.StreamContext, item interface{}) error {
 		}
 
 	case []map[string]interface{}: //如果是map数组, 这两种类型由rule.option 的 sendSingle 属性控制
-		kafkaMessage := KafkaSinkMessage{}
+		kafkaMessage := kbfilter.CustomSinkMessage{}
 		for _, msg := range d {
 			encode, err := kafkaMessage.Encode(msg)
 			if err != nil {
@@ -167,7 +168,7 @@ func (m *kafkaPub) Collect(ctx api.StreamContext, item interface{}) error {
 			messages = append(messages, kafkaMsg)
 		}
 	case map[string]interface{}: // 如果是map
-		kafkaMessage := KafkaSinkMessage{}
+		kafkaMessage := kbfilter.CustomSinkMessage{}
 		encode, err := kafkaMessage.Encode(d)
 		if err != nil {
 			logger.Error(err)
