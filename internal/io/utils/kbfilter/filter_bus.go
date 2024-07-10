@@ -27,6 +27,11 @@ func (that *SinkFilterAction) Watch(ctx api.StreamContext, record map[string]int
 	if !ok { // 过滤掉空值记录.
 		return records
 	}
+	_, ok = record["DataType_Sink"]
+	if !ok { // 过滤掉无类型记录.
+		return records
+	}
+
 	records = append(records, record)
 
 	if actionObj, ok := record["Action_Sink"]; ok {
