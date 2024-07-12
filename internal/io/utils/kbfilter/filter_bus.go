@@ -1,6 +1,7 @@
 package kbfilter
 
 import (
+	"fmt"
 	"math"
 	"strconv"
 
@@ -87,7 +88,7 @@ func (that *SinkFilterAction) Watch(ctx api.StreamContext, record map[string]int
 }
 
 // 累加跳变清洗并补点
-//   - @return map[string]interface{} 清洗后的记录
+//   - @return map[string]interface{} 清洗后的正常记录
 func (that *SinkFilterAction) incJumpWash(ctx api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
 	records := make([]map[string]interface{}, 0, 1)
 	logger := ctx.GetLogger()
@@ -100,7 +101,11 @@ func (that *SinkFilterAction) incJumpWash(ctx api.StreamContext, record map[stri
 			offset := that.tags["offset"].(float64)
 
 			val := record["Value_Sink"].(float64)
-			timestamp := int64(record["Time_Sink"].(float64))
+			timestamp, err := that.getTimestamp(record)
+			if nil != err {
+				logger.Error(err)
+				return records
+			}
 			threshold, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
 			if nil != err {
 				logger.Error(err)
@@ -126,16 +131,21 @@ func (that *SinkFilterAction) incJumpWash(ctx api.StreamContext, record map[stri
 		}
 	} else { // 首次 记录当前值与时间戳到缓存
 		that.tags["Value_Sink"] = record["Value_Sink"]
-		timestamp := int64(record["Time_Sink"].(float64))
+		timestamp, err := that.getTimestamp(record)
+		if nil != err {
+			logger.Error(err)
+			return records
+		}
 		that.tags["Time_Sink"] = timestamp
 		that.tags["offset"] = 0.0
+		records = append(records, record)
 	}
 
 	return records
 }
 
 // 累加指标跳变过滤
-//   - @return map[string]interface{} 过滤出来的记录
+//   - @return map[string]interface{} 过滤出来的脏记录
 func (that *SinkFilterAction) incJumpFilter(ctx api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
 	records := make([]map[string]interface{}, 0, 1)
 	logger := ctx.GetLogger()
@@ -149,7 +159,11 @@ func (that *SinkFilterAction) incJumpFilter(ctx api.StreamContext, record map[st
 			offset := that.tags["offset"].(float64)
 
 			val := record["Value_Sink"].(float64)
-			timestamp := int64(record["Time_Sink"].(float64))
+			timestamp, err := that.getTimestamp(record)
+			if nil != err {
+				logger.Error(err)
+				return records
+			}
 			threshold, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
 			if nil != err {
 				logger.Error(err)
@@ -174,16 +188,23 @@ func (that *SinkFilterAction) incJumpFilter(ctx api.StreamContext, record map[st
 		}
 	} else { // 首次 记录当前值与时间戳到缓存
 		that.tags["Value_Sink"] = record["Value_Sink"]
-		timestamp := int64(record["Time_Sink"].(float64))
+
+		timestamp, err := that.getTimestamp(record)
+		if nil != err {
+			logger.Error(err)
+			return records
+		}
+
 		that.tags["Time_Sink"] = timestamp
 		that.tags["offset"] = 0.0
+		// records = append(records, record)
 	}
 
 	return records
 }
 
 // 跳变清洗函数
-//   - @return map[string]interface{} 清洗后的记录
+//   - @return map[string]interface{} 清洗后的正常记录
 func (that *SinkFilterAction) jumpWash(ctx api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
 	records := make([]map[string]interface{}, 0, 1)
 	logger := ctx.GetLogger()
@@ -195,7 +216,11 @@ func (that *SinkFilterAction) jumpWash(ctx api.StreamContext, record map[string]
 			oldTimeInt := oldTime.(int64)
 
 			val := record["Value_Sink"].(float64)
-			timestamp := int64(record["Time_Sink"].(float64))
+			timestamp, err := that.getTimestamp(record)
+			if nil != err {
+				logger.Error(err)
+				return records
+			}
 			threshold, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
 			if nil != err {
 				logger.Error(err)
@@ -215,7 +240,11 @@ func (that *SinkFilterAction) jumpWash(ctx api.StreamContext, record map[string]
 		}
 	} else { // 否则记录当前值与时间戳到缓存
 		that.tags["Value_Sink"] = record["Value_Sink"]
-		timestamp := int64(record["Time_Sink"].(float64))
+		timestamp, err := that.getTimestamp(record)
+		if nil != err {
+			logger.Error(err)
+			return records
+		}
 		that.tags["Time_Sink"] = timestamp
 	}
 	records = append(records, record)
@@ -223,7 +252,7 @@ func (that *SinkFilterAction) jumpWash(ctx api.StreamContext, record map[string]
 }
 
 // 跳变过滤函数
-//   - @return map[string]interface{} 清洗后的记录
+//   - @return map[string]interface{} 脏记录
 func (that *SinkFilterAction) jumpFilter(ctx api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
 	records := make([]map[string]interface{}, 0, 1)
 	logger := ctx.GetLogger()
@@ -236,7 +265,13 @@ func (that *SinkFilterAction) jumpFilter(ctx api.StreamContext, record map[strin
 			oldTimeInt := oldTime.(int64)
 
 			val := record["Value_Sink"].(float64)
-			timestamp := int64(record["Time_Sink"].(float64))
+
+			timestamp, err := that.getTimestamp(record)
+			if nil != err {
+				logger.Error(err)
+				return records
+			}
+
 			threshold, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
 			if nil != err {
 				logger.Error(err)
@@ -253,8 +288,13 @@ func (that *SinkFilterAction) jumpFilter(ctx api.StreamContext, record map[strin
 		}
 	} else { // 否则记录当前值与时间戳到缓存
 		that.tags["Value_Sink"] = record["Value_Sink"]
-		timestamp := int64(record["Time_Sink"].(float64))
+		timestamp, err := that.getTimestamp(record)
+		if nil != err {
+			logger.Error(err)
+			return records
+		}
 		that.tags["Time_Sink"] = timestamp
+		// records = append(records, record)
 	}
 	return records
 }
@@ -268,7 +308,13 @@ func (that *SinkFilterAction) deadWash(ctx api.StreamContext, record map[string]
 	logger := ctx.GetLogger()
 	records := make([]map[string]interface{}, 0, 1)
 	val := record["Value_Sink"].(float64)
-	timestamp := int64(record["Time_Sink"].(float64))
+
+	timestamp, err := that.getTimestamp(record)
+	if nil != err {
+		logger.Error(err)
+		return records
+	}
+
 	flagVal, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
 	if nil != err {
 		logger.Error(err)
@@ -290,21 +336,15 @@ func (that *SinkFilterAction) deadWash(ctx api.StreamContext, record map[string]
 //   - @param record map[string]interface{} 原始记录
 //   - @param cfg *ini.File 规则配置项
 //   - @return map[string]interface{} 处理后的记录
-func (m *SinkFilterAction) outLimitWash(ctx api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
+func (that *SinkFilterAction) outLimitWash(ctx api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
 	logger := ctx.GetLogger()
 	records := make([]map[string]interface{}, 0, 1)
 	val := record["Value_Sink"].(float64)
-	timestamp := int64(0)
-	switch timeObj := record["Time_Sink"].(type) {
-	case int64:
-		timestamp = timeObj
-	case float64:
-		timestamp = int64(timeObj)
-	default:
-		logger.Error("Time_Sink type error")
+	timestamp, err := that.getTimestamp(record)
+	if nil != err {
+		logger.Error(err)
 		return records
 	}
-
 	flagVal, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
 	if nil != err {
 		logger.Error(err)
@@ -319,4 +359,17 @@ func (m *SinkFilterAction) outLimitWash(ctx api.StreamContext, record map[string
 
 	records = append(records, record)
 	return records
+}
+
+func (that *SinkFilterAction) getTimestamp(record map[string]interface{}) (int64, error) {
+	timestamp := int64(0)
+	switch timeObj := record["Time_Sink"].(type) {
+	case int64:
+		timestamp = timeObj
+	case float64:
+		timestamp = int64(timeObj)
+	default:
+		return -1, fmt.Errorf("Time_Sink type error")
+	}
+	return timestamp, nil
 }
