@@ -294,7 +294,17 @@ func (m *SinkFilterAction) outLimitWash(ctx api.StreamContext, record map[string
 	logger := ctx.GetLogger()
 	records := make([]map[string]interface{}, 0, 1)
 	val := record["Value_Sink"].(float64)
-	timestamp := int64(record["Time_Sink"].(float64))
+	timestamp := int64(0)
+	switch timeObj := record["Time_Sink"].(type) {
+	case int64:
+		timestamp = timeObj
+	case float64:
+		timestamp = int64(timeObj)
+	default:
+		logger.Error("Time_Sink type error")
+		return records
+	}
+
 	flagVal, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
 	if nil != err {
 		logger.Error(err)
