@@ -264,7 +264,7 @@ if not exist .\\plugins\\wasm (
     +     "DataType AS DataType_Sink, "
     +     "CASE WHEN Value ${than_operator} ${threshold} THEN \\\"1\\\" else \\\"0\\\" END AS Adjust_Sink, "
     +     "${aggregate_type}(Value) AS Value_Sink, "
-    +     "window_end() AS Time_Sink "
+    +     "Time AS Time_Sink "
     + "FROM ${source} "
     + "WHERE DevCode = \\\"${asset_code}\\\" AND Metric = \\\"${index_code}\\\" AND Value ${than_operator} ${threshold}"
 ```
@@ -279,7 +279,7 @@ if not exist .\\plugins\\wasm (
     +     "DataType AS DataType_Sink, "
     +     "CASE WHEN Value ${than_operator} ${threshold} THEN \\\"0\\\" else \\\"1\\\" END AS Adjust_Sink, "
     +     "${aggregate_type}(Value) AS Value_Sink, "
-    +     "window_end() AS Time_Sink "
+    +     "Time AS Time_Sink "
     + "FROM ${source} "
     + "WHERE DevCode = \\\"${asset_code}\\\" AND Metric = \\\"${index_code}\\\" AND Value ${than_operator} ${threshold}"
 ```
@@ -301,7 +301,7 @@ SELECT
     DataType AS DataType_Sink,
     CASE WHEN Value > 1000 THEN "0" else "1" END AS Adjust_Sink,
     Sum(Value) AS Value_Sink,
-    window_end() AS Time_Sink
+    Time AS Time_Sink
 FROM custom_redisSub
 WHERE DevCode = "DTGZJK:BBGF" AND Metric = "PWhD_C" AND Value > 1000
 ```
@@ -551,7 +551,7 @@ sql = "SELECT "
     +     "DataType AS DataType_Sink, "
     +     "\\\"1\\\" AS Adjust_Sink, "
     +     "Value AS Value_Sink, "
-    +     "window_end() AS Time_Sink "
+    +     "Time AS Time_Sink "
     + "FROM ${source} " 
     + "WHERE DevCode = \\\"${asset_code}\\\" "
     +            "AND Metric = \\\"${index_code}\\\" "
@@ -576,7 +576,7 @@ sql = "SELECT "
     +     "DataType AS DataType_Sink, "
     +     "1 AS Adjust_Sink, "
     +     "Value AS Value_Sink, "
-    +     "window_end() AS Time_Sink "
+    +     "Time AS Time_Sink "
     + "FROM ${source} " 
     + "WHERE DevCode = \\\"${asset_code}\\\" "
     +            "AND Metric = \\\"${index_code}\\\" "
