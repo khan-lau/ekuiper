@@ -1,18 +1,18 @@
 default:
   brokers: "10.50.145.3:9092"
-  groupID: "groupId"
-  partition: 0
-  maxBytes: 1000000
-  maxAttempts: 3
-  saslAuthType: "none"
-  insecureSkipVerify: true
-
-defaultNoGroup:
-  brokers: "10.50.145.3:9092"
   groupID: ""
   partition: 0
   maxBytes: 1000000
   maxAttempts: 3
   saslAuthType: "none"
-  insecureSkipVerify: true
+  insecureSkipVerify: false
+
+defaultNoGroup:
+  brokers: "10.50.145.3:9092"
+  groupID: ""
+  partition: 0
+  maxBytes: 1024000
+  maxAttempts: 3
+  saslAuthType: "none"
+  insecureSkipVerify: false
   

@@ -41,8 +41,8 @@ func (c *kafkaSourceConf) validate() error {
 }
 
 func (c *kafkaSourceConf) GetReaderConfig(topic string) kafkago.ReaderConfig {
-	conf.Log.Infof("kafka source conf: %v", c)
-	if c.GroupID == "" {
+	conf.Log.Infof("kafka source conf: %#v, topic: %s", c, topic)
+	if c.GroupID == "" || c.GroupID == "groupId" {
 		return kafkago.ReaderConfig{
 			Brokers:     strings.Split(c.Brokers, ","),
 			Topic:       topic,

@@ -205,7 +205,7 @@ func (that *kafka2Tdb) Publish(ctx api.StreamContext, messages ...kafkago.Messag
 	if err != nil {
 		conf.Log.Errorf("kafka sink publish error: %v", err)
 	} else {
-		conf.Log.Debug("sink kafka publish success")
+		conf.Log.Info("sink kafka publish success")
 	}
 
 	switch err := err.(type) {
