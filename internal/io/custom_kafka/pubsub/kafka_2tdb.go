@@ -323,9 +323,26 @@ func (m *kafka2Tdb) parseHeaders(ctx api.StreamContext, data interface{}) ([]kaf
 ////////////////////////////////////////////////////////////////////////////////////////
 
 // 构建thrift 消息结构
-func (that *kafka2Tdb) buildThriftRecord(_ api.StreamContext, msg map[string]interface{}) *thriftCommon.Record {
+func (that *kafka2Tdb) buildThriftRecord(ctx api.StreamContext, msg map[string]interface{}) *thriftCommon.Record {
 	if val, ok := msg["Value_Sink"]; ok { // 过滤掉空值
-		cell := &thriftCommon.Cell{Timestamp: msg["Time_Sink"].(int64), Value: val.(float64)}
+		// ctx.GetLogger().Infof("msg: %#v", msg)
+		// timestampObj := msg["Time_Sink"]
+		timestamp := int64(0)
+		switch timestampObj := msg["Time_Sink"].(type) {
+		case int32:
+			timestamp = int64(timestampObj)
+		case int64:
+			timestamp = timestampObj
+		case float32:
+			timestamp = int64(timestampObj)
+		case float64:
+			timestamp = int64(timestampObj)
+		default:
+			ctx.GetLogger().Errorf("timestamp type error: %v", timestampObj)
+			return nil
+		}
+
+		cell := &thriftCommon.Cell{Timestamp: timestamp, Value: val.(float64)}
 		record := &thriftCommon.Record{}
 		record.Name = msg["DevCode_Sink"].(string) + ":" + msg["Metric_Sink"].(string)
 		record.Cells = []*thriftCommon.Cell{cell}

@@ -29,7 +29,7 @@ func (that *CustomSourceMessage) GetSchemaJson() string {
 		"DataType": {"type": "string"},
 		"Adjust": {"type": "string"},
 		"Value": {"type": "float"},
-		"Time": {"type": "string"}
+		"Time": {"type": "int"}
 	}`
 }
 
@@ -172,7 +172,7 @@ func (that *CustomSinkMessage) GetSchemaJson() string {
 		"DataType_Sink": {"type": "string"},
 		"Adjust_Sink": {"type": "string"},
 		"Value_Sink": {"type": "float"},
-		"Time_Sink": {"type": "string"}
+		"Time_Sink": {"type": "int"}
 	}`
 }
 

@@ -366,7 +366,13 @@ func (that *SinkFilterAction) getTimestamp(record map[string]interface{}) (int64
 	switch timeObj := record["Time_Sink"].(type) {
 	case int64:
 		timestamp = timeObj
+	case int:
+		timestamp = int64(timeObj)
+	case int32:
+		timestamp = int64(timeObj)
 	case float64:
+		timestamp = int64(timeObj)
+	case float32:
 		timestamp = int64(timeObj)
 	default:
 		return -1, fmt.Errorf("Time_Sink type error")
