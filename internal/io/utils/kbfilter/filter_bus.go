@@ -227,11 +227,11 @@ func (that *SinkFilterAction) jumpWash(ctx api.StreamContext, record map[string]
 			}
 
 			if (math.Abs(val-oldValFloat) / math.Abs(float64(timestamp-oldTimeInt)/1000)) > threshold { // 如果越限
-				record["Value_Sink"] = oldValFloat // 补偿为前一个值
+				// record["Value_Sink"] = oldValFloat // 补偿为前一个值
 
 				that.tags["Value_Sink"] = oldValFloat // 更新缓存中的值
 				that.tags["Time_Sink"] = timestamp    // 更新缓存中的时间戳
-				records = append(records, record)
+
 				return records
 			} else { // 如果没有越限, 则只需要更新缓存
 				that.tags["Value_Sink"] = val
@@ -294,7 +294,7 @@ func (that *SinkFilterAction) jumpFilter(ctx api.StreamContext, record map[strin
 			return records
 		}
 		that.tags["Time_Sink"] = timestamp
-		// records = append(records, record)
+
 	}
 	return records
 }
@@ -323,7 +323,7 @@ func (that *SinkFilterAction) deadWash(ctx api.StreamContext, record map[string]
 
 	flag := utils.Round(flagVal) == 1 // 0: 丢弃, 1: 输出
 	if !flag {
-		logger.Warnf("deadWatcch ignore value: %d, %f", timestamp, val)
+		logger.Warnf("deadWatcch ignore timestamp: %d, value: %f", timestamp, val)
 		return records
 	}
 
