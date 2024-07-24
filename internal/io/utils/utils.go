@@ -30,3 +30,10 @@ func ByteSliceToString(b []byte) string {
 func Round(val float64) int {
 	return int(math.Floor(val + 0.5))
 }
+
+func AbsInt64(x int64) int64 {
+	if x < 0 {
+		return -x
+	}
+	return x
+}

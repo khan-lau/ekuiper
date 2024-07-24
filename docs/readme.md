@@ -228,7 +228,7 @@ if not exist .\\plugins\\wasm (
 * `越限`     处理方式: 删除 或 补点, 补点规则见备注
   - 1. 点的值大于或小于 `指定值`;            
 * `跳变`     处理方式: 删除 或 补点, 补点规则见备注
-  - 1. 连续两个点的`差的绝对值` `大于或小于` `阈值` 
+  - 1. 连续两个点的`差的绝对值` `大于或小于` `阈值` ,  `差的绝对值` (最近一个正常点与当前点的差值)
   - 2. 连续两个点的`斜率` (`差的绝对值` / fabs(A点时间戳 - B点时间戳)) `大于或小于` `阈值` 
   - 3. 递增指标的跳变 
 * `死值`     处理方式: 删除 或 补点, 补点规则见备注
@@ -307,7 +307,7 @@ WHERE DevCode = "DTGZJK:BBGF" AND Metric = "PWhD_C" AND Value > 1000
 ```
 
 
-> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
+> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb | custom_memoryPub | custom_redis2Tdb`, 该sink直接将数据`写入时序库`
 > 2. Action_Sink 固定值为 `"proc=out_limit"`
 > 3. 该需求需要`配置2个rule`, 用于处理 `越限` 与 `非越限` 不同sink通道
 
@@ -343,11 +343,10 @@ sql = "SELECT "
     +     "\\\"${out_metric}\\\" AS Metric_Sink, "
     +     "DataType AS DataType_Sink, "
     +     "${threshold} AS Adjust_Sink, "
-    +     "last_value(Value, false) AS Value_Sink, "
-    +     "max(Time) AS Time_Sink "
+    +     "Value AS Value_Sink, "
+    +     "Time AS Time_Sink "
     + "FROM ${source}  "
-    + "GROUP BY COUNTWINDOW(2, 1) " 
-    + "FILTER ( WHERE DevCode = \\\"${asset_code}\\\" "
+    + "WHERE DevCode = \\\"${asset_code}\\\" "
     +            "AND Metric = \\\"${index_code}\\\" "
 ```
 
@@ -358,14 +357,14 @@ SELECT
     "PWhD_C" AS Metric_Sink,
     DataType AS DataType_Sink,
     "5" AS Adjust_Sink,      -- 此处传递阈值
-    last_value(Value, false) AS Value_Sink
-    max(Time) AS Time_Sink
+    Value AS Value_Sink
+    Time AS Time_Sink
 FROM custom_redisSub
 WHERE DevCode = "DTGZJK:BBGF" AND Metric = "PWhD_C"
 
 ```
 
-> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
+> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb | custom_memoryPub | custom_redis2Tdb`, 该sink直接将数据`写入时序库`
 > 2. Action_Sink 固定值为 `"proc=jump \n proc.filter=not_in"`
 
 
@@ -377,15 +376,14 @@ sql = "SELECT "
     +     "\\\"${out_metric}\\\" AS Metric_Sink, "
     +     "DataType AS DataType_Sink, "
     +     "${threshold} AS Adjust_Sink, "
-    +     "last_value(Value, false) AS Value_Sink, "
-    +     "max(Time) AS Time_Sink "
+    +     "Value AS Value_Sink, "
+    +     "Time AS Time_Sink "
     + "FROM ${source}  "
-    + "GROUP BY COUNTWINDOW(2, 1) " 
-    + "FILTER ( WHERE DevCode = \\\"${asset_code}\\\" "
+    + "WHERE DevCode = \\\"${asset_code}\\\" "
     +            "AND Metric = \\\"${index_code}\\\" "
 ```
 
-> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
+> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb | custom_memoryPub | custom_redis2Tdb`, 该sink直接将数据`写入时序库`
 > 2. Action_Sink 固定值为 `"proc=jump \n proc.filter=in"`
 
 ###### 3.2.2.2.3 递增指标跳变清洗
@@ -420,15 +418,14 @@ sql = "SELECT "
     +     "\\\"${out_metric}\\\" AS Metric_Sink, "
     +     "DataType AS DataType_Sink, "
     +     "${threshold} AS Adjust_Sink, "
-    +     "last_value(Value, false) AS Value_Sink, "
-    +     "max(Time) AS Time_Sink "
+    +     "Value AS Value_Sink, "
+    +     "Time AS Time_Sink "
     + "FROM ${source}  "
-    + "GROUP BY COUNTWINDOW(2, 1) " 
-    + "FILTER ( WHERE DevCode = \\\"${asset_code}\\\" "
+    + "WHERE DevCode = \\\"${asset_code}\\\" "
     +            "AND Metric = \\\"${index_code}\\\" "
 ```
 
-> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
+> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb | custom_memoryPub | custom_redis2Tdb`, 该sink直接将数据`写入时序库`
 > 2. Action_Sink 固定值为 `"proc=jump \n proc.filter=not_in"`
 
 
@@ -441,18 +438,19 @@ sql = "SELECT "
     +     "\\\"${out_metric}\\\" AS Metric_Sink, "
     +     "DataType AS DataType_Sink, "
     +     "${threshold} AS Adjust_Sink, "
-    +     "last_value(Value, false) AS Value_Sink, "
-    +     "max(Time) AS Time_Sink "
+    +     "Value AS Value_Sink, "
+    +     "Time AS Time_Sink "
     + "FROM ${source}  "
-    + "GROUP BY COUNTWINDOW(2, 1) " 
-    + "FILTER ( WHERE DevCode = \\\"${asset_code}\\\" "
+    + "WHERE DevCode = \\\"${asset_code}\\\" "
     +            "AND Metric = \\\"${index_code}\\\" "
 ```
 
-> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
+> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb | custom_memoryPub | custom_redis2Tdb`, 该sink直接将数据`写入时序库`
 > 2. Action_Sink 固定值为 `"proc=jump \n proc.filter=in"`
 
 ##### 3.2.2.3 死值
+
+死值判断的精度精确到 0.000001
 
 ###### 3.2.2.3.1 连续多长时间 `值不变`
 
@@ -463,13 +461,12 @@ sql = "SELECT "
     +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
     +     "\\\"${out_metric}\\\" AS Metric_Sink, "
     +     "DataType AS DataType_Sink, "
-    +     "CASE WHEN max(Value) - min(Value) = 0 then \\\"1\\\" else \\\"0\\\" end AS Adjust_Sink, "
-    +     "last_value(Value, false) AS Value_Sink, "
-    +     "max(Time) AS Time_Sink "
+    +     "\\\"1\\\" AS Adjust_Sink, "
+    +     "Value AS Value_Sink, "
+    +     "Time AS Time_Sink "
     + "FROM ${source}  "
-    + "GROUP BY SLIDINGWINDOW(ss, ${window_time}) " 
-    + "FILTER ( WHERE DevCode = \\\"${asset_code}\\\" "
-    +            "AND Metric = \\\"${index_code}\\\"  )"
+    + "WHERE DevCode = \\\"${asset_code}\\\" "
+    +     "AND Metric = \\\"${index_code}\\\""
 ```
 
 
@@ -480,17 +477,17 @@ sql = "SELECT "
     +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
     +     "\\\"${out_metric}\\\" AS Metric_Sink, "
     +     "DataType AS DataType_Sink, "
-    +     "CASE WHEN max(Value) - min(Value) = 0 then \\\"0\\\" else \\\"1\\\" end AS Adjust_Sink, "
-    +     "last_value(Value, false) AS Value_Sink, "
-    +     "max(Time) AS Time_Sink "
+    +     "\\\"0\\\" AS Adjust_Sink, "
+    +     "Value AS Value_Sink, "
+    +     "Time AS Time_Sink "
     + "FROM ${source}  "
-    + "GROUP BY SLIDINGWINDOW(ss, ${window_time}) " 
-    + "FILTER ( WHERE DevCode = \\\"${asset_code}\\\" "
-    +            "AND Metric = \\\"${index_code}\\\"  )"
+    + "WHERE DevCode = \\\"${asset_code}\\\" "
+    +     "AND Metric = \\\"${index_code}\\\""
 ```
 
-> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
-> 2. Action_Sink 固定值为 `"proc=dead"`
+> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb | custom_memoryPub | custom_redis2Tdb`, 该sink直接将数据`写入时序库`
+> 2. Action_Sink 固定值为 `"proc=dead_time \n proc.count=${window_time}"`
+>   - 2.1. 参数 `window_time` 表示连续多少秒无变化
 > 3. 该需求需要`配置2个rule`, 用于处理 `死值` 与 `非死值的` 不同sink通道
 
 ###### 3.2.2.3.2 连续多少个点 `值不变`
@@ -502,13 +499,12 @@ sql = "SELECT "
     +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
     +     "\\\"${out_metric}\\\" AS Metric_Sink, "
     +     "DataType AS DataType_Sink, "
-    +     " CASE WHEN max(Value) - min(Value) = 0 then \\\"1\\\" else \\\"0\\\" end AS Adjust_Sink, "
-    +     "last_value(Value, false) AS Value_Sink, "
-    +     "max(Time) AS Time_Sink "
+    +     "\\\"1\\\" AS Adjust_Sink, "
+    +     "Value AS Value_Sink, "
+    +     "Time AS Time_Sink "
     + "FROM ${source}  "
-    + "GROUP BY COUNTWINDOW(${window_count}, 1) " 
-    + "FILTER ( WHERE DevCode = \\\"${asset_code}\\\" "
-    +            "AND Metric = \\\"${index_code}\\\"  )"
+    + "WHERE DevCode = \\\"${asset_code}\\\" "
+    +     "AND Metric = \\\"${index_code}\\\""
 ```
 
 非死值:
@@ -518,17 +514,17 @@ sql = "SELECT "
     +     "\\\"${out_dev_code}\\\" AS DevCode_Sink, "
     +     "\\\"${out_metric}\\\" AS Metric_Sink, "
     +     "DataType AS DataType_Sink, "
-    +     "CASE WHEN max(Value) - min(Value) = 0 then \\\"0\\\" else \\\"1\\\" end AS Adjust_Sink, "
-    +     "last_value(Value, false) AS Value_Sink, "
-    +     "max(Time) AS Time_Sink "
+    +     "\\\"0\\\" AS Adjust_Sink, "
+    +     "Value AS Value_Sink, "
+    +     "Time AS Time_Sink "
     + "FROM ${source}  "
-    + "GROUP BY COUNTWINDOW(${window_count}, 1) " 
-    + "FILTER ( WHERE DevCode = \\\"${asset_code}\\\" "
-    +            "AND Metric = \\\"${index_code}\\\"  )"
+    + "WHERE DevCode = \\\"${asset_code}\\\" "
+    +     "AND Metric = \\\"${index_code}\\\""
 ```
 
-> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb`, 该sink直接将数据`写入时序库`
-> 2. Action_Sink 固定值为 `"proc=dead"`
+> 1. 该需求需要独立的`定制sink`处理, sink名称为 `custom_kafka2Tdb | custom_memoryPub | custom_redis2Tdb`, 该sink直接将数据`写入时序库`
+> 2. Action_Sink 固定值为 `"proc=dead_count \n proc.count=${window_count}"`
+>   - 2.1 参数 `window_count` 表示连续多少条记录值无变化
 > 3. 该需求需要`配置2个rule`, 用于处理 `死值` 与 `非死值的` 不同sink通道
 
 ###### 3.2.2.3.3 ~~连续多少个点 `值不变` 或 连续多长时间 `值不变`~~
@@ -564,7 +560,7 @@ sql = "SELECT "
 
 > `x_timestamp_in_duration` 判断时间戳是否在指定的闹钟范围内, `左开右开`
 > `x_from_timestamp` 自定义函数, 将10位精确到s的时间戳 或 13位精确到ms的时间戳转换位date类型
-> Action_Sink 固定值为 `"proc=jump \n proc.filter=in"`
+> Action_Sink 固定值为 `"proc=time_filter \n proc.filter=in"`
 
 ###### 3.2.2.4.2 `不在`指定时间范围
 
@@ -589,7 +585,7 @@ sql = "SELECT "
 
 > `x_timestamp_in_duration` 判断时间戳是否在指定的闹钟范围内
 > `x_from_timestamp` 自定义函数, 将10位精确到s的时间戳 或 13位精确到ms的时间戳转换位date类型
-> Action_Sink 固定值为 `"proc=jump \n proc.filter=not_in"`
+> Action_Sink 固定值为 `"proc=time_filter \n proc.filter=not_in"`
 
 #### 3.2.3 action sink表达式格式
 
@@ -597,6 +593,7 @@ sql = "SELECT "
 ```ini
 proc=jump              # jump|inc_jump|dead|out_limit|time_filter; 当action.type为proc时需要指定
 proc.filter=in         # in|not_in
+proc.count=${count}    # 数值参数
 
 ; proc.func=append       # append|tag
 ; proc.tag=tag01         # action.proc.func为tag时的tag名
@@ -607,7 +604,8 @@ proc.filter=in         # in|not_in
 ##### 3.2.3.1 proc 值描述
 - jump        跳变
 - inc_jump    递增指标跳变
-- dead        死值
+- dead_time   死值(多长时间无变化)
+- dead_count  死值(连续多少个点无变化)
 - out_limit   越限
 - time_filter 时间过滤
 

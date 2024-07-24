@@ -68,9 +68,22 @@ func (that *SinkFilterAction) Watch(ctx api.StreamContext, record map[string]int
 							return that.incJumpFilter(ctx, record, that.cfg)
 						}
 					}
-				case "dead": // 死值处理
+				case "dead_time": // 按时间计算的死值处理
 					{
-						return that.deadWash(ctx, record, that.cfg)
+						if that.cfg.Section("").HasKey("proc.count") {
+							return that.deadTimeWash(ctx, record, that.cfg)
+						} else {
+							return make([]map[string]interface{}, 0)
+						}
+
+					}
+				case "dead_count": // 按记录重复次数的死值处理
+					{
+						if that.cfg.Section("").HasKey("proc.count") {
+							return that.deadCountWash(ctx, record, that.cfg)
+						} else {
+							return make([]map[string]interface{}, 0)
+						}
 					}
 				case "out_limit": // 超限处理
 					{
@@ -284,6 +297,7 @@ func (that *SinkFilterAction) jumpFilter(ctx api.StreamContext, record map[strin
 			} else { // 如果没有越限, 则只需要更新缓存
 				that.tags["Value_Sink"] = val
 				that.tags["Time_Sink"] = timestamp
+
 			}
 		}
 	} else { // 否则记录当前值与时间戳到缓存
@@ -304,10 +318,74 @@ func (that *SinkFilterAction) jumpFilter(ctx api.StreamContext, record map[strin
 //   - @param record map[string]interface{} 原始记录
 //   - @param cfg *ini.File 规则配置项
 //   - @return map[string]interface{} 处理后的记录
-func (that *SinkFilterAction) deadWash(ctx api.StreamContext, record map[string]interface{}, _ *ini.File) []map[string]interface{} {
+func (that *SinkFilterAction) deadCountWash(ctx api.StreamContext, record map[string]interface{}, cfg *ini.File) []map[string]interface{} {
 	logger := ctx.GetLogger()
+
 	records := make([]map[string]interface{}, 0, 1)
+	count, err := strconv.ParseInt(cfg.Section("").Key("proc.count").String(), 10, 64)
+	if nil != err {
+		logger.Errorf("dead count parameter parser fault, %s", err)
+		return records
+	}
+
+	timestamp, err := that.getTimestamp(record)
+	if nil != err {
+		logger.Error(err)
+		return records
+	}
+
+	flagVal, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
+	if nil != err {
+		logger.Error(err)
+		return records
+	}
+	flag := utils.Round(flagVal) == 1 // 0: 输出非死值, 1: 输出死值
 	val := record["Value_Sink"].(float64)
+
+	if oldVal, ok := that.tags["Value_Sink"]; ok {
+		oldValFloat, oldTimeInt := oldVal.(float64), that.tags["Time_Sink"].(int64)
+		if math.Abs(val-oldValFloat) < 0.000001 { // 如果值没有变化
+			that.tags["Time_Sink"] = oldTimeInt + 1
+			if that.tags["Time_Sink"].(int64) >= count { // 如果时间戳已经超过阈值
+				if flag {
+					records = append(records, record)
+				}
+			} else {
+				if !flag {
+					records = append(records, record)
+				}
+			}
+		} else { // 如果值有变化, 重新计数
+			that.tags["Value_Sink"], that.tags["Time_Sink"] = record["Value_Sink"], timestamp
+			if !flag {
+				records = append(records, record)
+			}
+		}
+
+	} else { // 否则记录当前值与时间戳到缓存
+		that.tags["Value_Sink"], that.tags["Time_Sink"] = record["Value_Sink"], timestamp
+		if !flag {
+			records = append(records, record)
+		}
+	}
+
+	return records
+}
+
+// 死值处理
+//   - @param ctx api.StreamContext 上下文
+//   - @param record map[string]interface{} 原始记录
+//   - @param cfg *ini.File 规则配置项
+//   - @return map[string]interface{} 处理后的记录
+func (that *SinkFilterAction) deadTimeWash(ctx api.StreamContext, record map[string]interface{}, cfg *ini.File) []map[string]interface{} {
+	logger := ctx.GetLogger()
+
+	records := make([]map[string]interface{}, 0, 1)
+	count, err := strconv.ParseInt(cfg.Section("").Key("proc.count").String(), 10, 64)
+	if nil != err {
+		logger.Error(err)
+		return records
+	}
 
 	timestamp, err := that.getTimestamp(record)
 	if nil != err {
@@ -322,9 +400,34 @@ func (that *SinkFilterAction) deadWash(ctx api.StreamContext, record map[string]
 	}
 
 	flag := utils.Round(flagVal) == 1 // 0: 丢弃, 1: 输出
-	if !flag {
-		logger.Warnf("deadWatcch ignore timestamp: %d, value: %f", timestamp, val)
-		return records
+	val := record["Value_Sink"].(float64)
+
+	if oldVal, ok := that.tags["Value_Sink"]; ok {
+		if oldTime, ok := that.tags["Time_Sink"]; ok {
+			oldValFloat, oldTimeInt := oldVal.(float64), oldTime.(int64)
+
+			if math.Abs(val-oldValFloat) < 0.000001 { // 如果值没有变化
+				if utils.AbsInt64(oldTimeInt-timestamp)/1000 >= count { // 如果时间差超过时长阈值
+					if flag {
+						records = append(records, record)
+					}
+				} else {
+					if !flag {
+						records = append(records, record)
+					}
+				}
+			} else {
+				that.tags["Value_Sink"], that.tags["Time_Sink"] = record["Value_Sink"], timestamp
+				if !flag {
+					records = append(records, record)
+				}
+			}
+		}
+	} else { // 否则记录当前值与时间戳到缓存
+		that.tags["Value_Sink"], that.tags["Time_Sink"] = record["Value_Sink"], timestamp
+		if !flag {
+			records = append(records, record)
+		}
 	}
 
 	records = append(records, record)

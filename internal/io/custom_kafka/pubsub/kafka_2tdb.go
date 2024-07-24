@@ -164,6 +164,7 @@ func (m *kafka2Tdb) Collect(ctx api.StreamContext, item interface{}) error {
 			}
 
 		}
+
 	case map[string]interface{}: // 如果是map
 		msgs := m.filter.Watch(ctx, d) // 清洗数据, 因为有些情况要补记录, 所以可能会产生多条
 
@@ -186,6 +187,7 @@ func (m *kafka2Tdb) Collect(ctx api.StreamContext, item interface{}) error {
 			}
 			messages = append(messages, kafkaMsg)
 		}
+
 	default:
 		return fmt.Errorf("unrecognized format of %s", item)
 	}
