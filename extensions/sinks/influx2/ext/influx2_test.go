@@ -116,6 +116,17 @@ func TestConfig(t *testing.T) {
 				"precision":       "ns",
 				"useLineProtocol": true,
 			},
+			error: "",
+		},
+		{
+			name: "no err",
+			conf: map[string]interface{}{
+				"addr":            "http://192.168.0.3:8086",
+				"org":             "abc",
+				"bucket":          "bucket_one",
+				"precision":       "ns",
+				"useLineProtocol": false,
+			},
 			error: "measurement is required",
 		},
 		{
