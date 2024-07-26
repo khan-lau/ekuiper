@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -26,6 +27,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"go.uber.org/automaxprocs/maxprocs"
 
 	"github.com/lf-edge/ekuiper/internal/binder/function"
@@ -34,9 +36,11 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/keyedstate"
 	meta2 "github.com/lf-edge/ekuiper/internal/meta"
+	"github.com/lf-edge/ekuiper/internal/pkg/async"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
 	"github.com/lf-edge/ekuiper/internal/processor"
+	"github.com/lf-edge/ekuiper/internal/server/promMetrics"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -56,6 +60,16 @@ var (
 	ruleMigrationProcessor *RuleMigrationProcessor
 	stopSignal             chan struct{}
 )
+
+// newNetListener allows EdgeX Foundry, protected by OpenZiti to override and obtain a transport
+// protected by OpenZiti's zero trust connectivity. See client_edgex.go where this function is
+// set in an init() call
+var newNetListener = newTcpListener
+
+func newTcpListener(addr string, logger *logrus.Logger) (net.Listener, error) {
+	logger.Info("using ListenMode 'http'")
+	return net.Listen("tcp", addr)
+}
 
 func stopEKuiper() {
 	stopSignal <- struct{}{}
@@ -189,15 +203,20 @@ func StartUp(Version string) {
 	}
 	exit := make(chan struct{})
 	go runScheduleRuleChecker(exit)
+	async.InitManager()
 
 	// Start rest service
 	srvRest := createRestServer(conf.Config.Basic.RestIp, conf.Config.Basic.RestPort, conf.Config.Basic.Authentication)
 	go func() {
 		var err error
+		ln, listenErr := newNetListener(srvRest.Addr, logger)
+		if listenErr != nil {
+			panic(listenErr)
+		}
 		if conf.Config.Basic.RestTls == nil {
-			err = srvRest.ListenAndServe()
+			err = srvRest.Serve(ln)
 		} else {
-			err = srvRest.ListenAndServeTLS(conf.Config.Basic.RestTls.Certfile, conf.Config.Basic.RestTls.Keyfile)
+			err = srvRest.ServeTLS(ln, conf.Config.Basic.RestTls.Certfile, conf.Config.Basic.RestTls.Keyfile)
 		}
 		if err != nil && err != http.ErrServerClosed {
 			logger.Fatal("Error serving rest service: ", err)
@@ -210,6 +229,9 @@ func StartUp(Version string) {
 		v.serve()
 	}
 
+	if conf.Config.Basic.Prometheus {
+		promMetrics.RegisterMetrics()
+	}
 	// Register conf managers
 	InitConfManagers()
 
@@ -336,11 +358,8 @@ func runScheduleRuleCheckerByInterval(d time.Duration, exit <-chan struct{}) {
 				continue
 			}
 			now := conf.GetNow()
-			for _, r := range rs {
-				if err := handleScheduleRuleState(now, r.rule, r.state); err != nil {
-					conf.Log.Errorf("handle schedule rule %v state failed, err:%v", r.rule.Id, err)
-				}
-			}
+			handleAllRuleStatusMetrics(rs)
+			handleAllScheduleRuleState(now, rs)
 		}
 	}
 }
@@ -352,6 +371,47 @@ func runScheduleRuleChecker(exit <-chan struct{}) {
 		return
 	}
 	runScheduleRuleCheckerByInterval(d, exit)
+}
+
+type RuleStatusMetricsValue int
+
+const (
+	RuleStoppedByError RuleStatusMetricsValue = -1
+	RuleStopped        RuleStatusMetricsValue = 0
+	RuleRunning        RuleStatusMetricsValue = 1
+)
+
+func handleAllRuleStatusMetrics(rs []ruleWrapper) {
+	if conf.Config != nil && conf.Config.Basic.Prometheus {
+		var runningCount int
+		var stopCount int
+		var v RuleStatusMetricsValue
+		for _, r := range rs {
+			id := r.rule.Id
+			switch r.state {
+			case rule.RuleStarted:
+				runningCount++
+				v = RuleRunning
+			case rule.RuleStopped, rule.RuleTerminated, rule.RuleWait:
+				stopCount++
+				v = RuleStopped
+			default:
+				stopCount++
+				v = RuleStoppedByError
+			}
+			promMetrics.SetRuleStatus(id, int(v))
+		}
+		promMetrics.SetRuleStatusCountGauge(true, runningCount)
+		promMetrics.SetRuleStatusCountGauge(false, stopCount)
+	}
+}
+
+func handleAllScheduleRuleState(now time.Time, rs []ruleWrapper) {
+	for _, r := range rs {
+		if err := handleScheduleRuleState(now, r.rule, r.state); err != nil {
+			conf.Log.Errorf("handle schedule rule %v state failed, err:%v", r.rule.Id, err)
+		}
+	}
 }
 
 func handleScheduleRuleState(now time.Time, r *api.Rule, state string) error {

@@ -86,7 +86,7 @@ type TimeLiteral struct {
 }
 
 type IntegerLiteral struct {
-	Val int
+	Val int64
 }
 
 type StringLiteral struct {
@@ -184,7 +184,7 @@ func (il *IntegerLiteral) expr()    {}
 func (il *IntegerLiteral) literal() {}
 func (il *IntegerLiteral) node()    {}
 func (il *IntegerLiteral) String() string {
-	return strconv.Itoa(il.Val)
+	return strconv.FormatInt(il.Val, 10)
 }
 
 func (nl *NumberLiteral) expr()    {}
@@ -224,6 +224,9 @@ type Call struct {
 	Cached      bool
 	Partition   *PartitionExpr
 	WhenExpr    Expr
+
+	// This is used for window functions.
+	SortFields SortFields
 }
 
 func (c *Call) expr()    {}

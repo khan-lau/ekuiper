@@ -19,11 +19,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/internal/server/promMetrics"
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/internal/xsql"
@@ -284,11 +286,18 @@ func updateRule(ruleId, ruleJson string, replacePasswd bool) error {
 func deleteRule(name string) (result string) {
 	if rs, ok := registry.Delete(name); ok {
 		rs.Close()
+		deleteRuleMetrics(name)
 		result = fmt.Sprintf("Rule %s was deleted.", name)
 	} else {
 		result = fmt.Sprintf("Rule %s was not found.", name)
 	}
 	return
+}
+
+func deleteRuleMetrics(name string) {
+	if conf.Config != nil && conf.Config.Basic.Prometheus {
+		promMetrics.RemoveRuleStatus(name)
+	}
 }
 
 func startRule(name string) error {
@@ -346,6 +355,74 @@ func stopRule(name string) (result string, err error) {
 
 func restartRule(name string) error {
 	return reRunRule(name, false)
+}
+
+func getAllRuleStatus() (string, error) {
+	rules, err := ruleProcessor.GetAllRules()
+	if err != nil {
+		return "", err
+	}
+	m := make(map[string]ruleExceptionStatus)
+	for _, ruleID := range rules {
+		s, err := getRuleExceptionStatus(ruleID)
+		if err != nil {
+			return "", err
+		}
+		m[ruleID] = s
+	}
+	b, _ := json.Marshal(m)
+	return string(b), nil
+}
+
+func getRuleExceptionStatus(name string) (ruleExceptionStatus, error) {
+	s := ruleExceptionStatus{
+		lastExceptionTime: -1,
+	}
+	if rs, ok := registry.Load(name); ok {
+		result, err := rs.GetState()
+		if err != nil {
+			return s, err
+		}
+		s.Status = result
+		if result == rule.RuleStarted {
+			keys, values := (*rs.Topology).GetMetrics()
+			for i, key := range keys {
+				if strings.Contains(key, "last_exception_time") {
+					v := values[i].(int64)
+					if v > s.lastExceptionTime {
+						s.lastExceptionTime = v
+						total, last := getTargetException(keys, values, key[:strings.Index(key, "_last_exception_time")])
+						s.LastException = last
+						s.ExceptionsTotal = total
+					}
+				}
+			}
+		}
+	}
+	return s, nil
+}
+
+func getTargetException(keys []string, values []any, prefix string) (int64, string) {
+	var t int64
+	lastException := ""
+	for i, key := range keys {
+		if key == fmt.Sprintf("%s_exceptions_total", prefix) {
+			t = values[i].(int64)
+			continue
+		}
+		if key == fmt.Sprintf("%s_last_exception", prefix) {
+			lastException = values[i].(string)
+			continue
+		}
+	}
+	return t, lastException
+}
+
+type ruleExceptionStatus struct {
+	Status            string `json:"status"`
+	LastException     string `json:"last_exception"`
+	ExceptionsTotal   int64  `json:"exceptions_total"`
+	lastExceptionTime int64
 }
 
 func getRuleStatus(name string) (string, error) {

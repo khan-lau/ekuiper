@@ -116,24 +116,9 @@ func createTopo(rule *api.Rule, lp LogicalPlan, mockSourcesProp map[string]map[s
 			tp.AddSink(inputs, sink)
 		}
 	} else {
-		manager := io.GetManager()
-		for i, m := range rule.Actions {
-			for name, action := range m {
-				props, ok := action.(map[string]interface{})
-				if !ok {
-					return nil, fmt.Errorf("expect map[string]interface{} type for the action properties, but found %v", action)
-				}
-				s, err := manager.Sink(name)
-				if err != nil {
-					return nil, err
-				}
-				if s != nil {
-					if err := s.Configure(props); err != nil {
-						return nil, err
-					}
-				}
-				tp.AddSink(inputs, node.NewSinkNode(fmt.Sprintf("%s_%d", name, i), name, props))
-			}
+		err = buildActions(tp, rule, inputs)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -287,7 +272,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources ma
 	case *ProjectSetPlan:
 		op = Transform(&operator.ProjectSetOperator{SrfMapping: t.SrfMapping, LimitCount: t.limitCount, EnableLimit: t.enableLimit}, fmt.Sprintf("%d_projectset", newIndex), options)
 	case *WindowFuncPlan:
-		op = Transform(&operator.WindowFuncOperator{WindowFuncFields: t.windowFuncFields}, fmt.Sprintf("%d_windowFunc", newIndex), options)
+		op = Transform(&operator.WindowFuncOperator{WindowFuncField: t.windowFuncField}, fmt.Sprintf("%d_windowFunc", newIndex), options)
 	default:
 		err = fmt.Errorf("unknown logical plan %v", t)
 	}
@@ -530,17 +515,17 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			}
 			wp := WindowPlan{
 				wtype:       w.WindowType,
-				length:      w.Length.Val,
+				length:      int(w.Length.Val),
 				isEventTime: opt.IsEventTime,
 			}.Init()
 			if w.Delay != nil {
-				wp.delay = int64(w.Delay.Val)
+				wp.delay = w.Delay.Val
 			}
 			if w.Interval != nil {
-				wp.interval = w.Interval.Val
+				wp.interval = int(w.Interval.Val)
 			} else if w.WindowType == ast.COUNT_WINDOW {
 				// if no interval value is set, and it's a count window, then set interval to length value.
-				wp.interval = w.Length.Val
+				wp.interval = int(w.Length.Val)
 			}
 			if w.TimeUnit != nil {
 				wp.timeUnit = w.TimeUnit.Val
@@ -620,7 +605,6 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			children = []LogicalPlan{p}
 		}
 	}
-
 	if stmt.Having != nil {
 		p = HavingPlan{
 			condition: stmt.Having,
@@ -628,18 +612,19 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
 	}
-
+	windowFuncFields := extractWindowFuncFields(stmt)
+	if len(windowFuncFields) > 0 {
+		for _, wf := range windowFuncFields {
+			p = WindowFuncPlan{
+				windowFuncField: wf,
+			}.Init()
+			p.SetChildren(children)
+			children = []LogicalPlan{p}
+		}
+	}
 	if stmt.SortFields != nil {
 		p = OrderPlan{
 			SortFields: stmt.SortFields,
-		}.Init()
-		p.SetChildren(children)
-		children = []LogicalPlan{p}
-	}
-	windowFuncFields, windowFuncsNames := extractWindowFuncFields(stmt)
-	if len(windowFuncFields) > 0 {
-		p = WindowFuncPlan{
-			windowFuncFields: windowFuncFields,
 		}.Init()
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
@@ -650,10 +635,10 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		limitCount := 0
 		if stmt.Limit != nil && len(srfMapping) == 0 {
 			enableLimit = true
-			limitCount = stmt.Limit.(*ast.LimitExpr).LimitCount.Val
+			limitCount = int(stmt.Limit.(*ast.LimitExpr).LimitCount.Val)
 		}
 		p = ProjectPlan{
-			windowFuncNames: windowFuncsNames,
+			windowFuncNames: windowFuncFields,
 			fields:          stmt.Fields,
 			isAggregate:     xsql.WithAggFields(stmt),
 			sendMeta:        opt.SendMetaToSink,
@@ -669,7 +654,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		limitCount := 0
 		if stmt.Limit != nil {
 			enableLimit = true
-			limitCount = stmt.Limit.(*ast.LimitExpr).LimitCount.Val
+			limitCount = int(stmt.Limit.(*ast.LimitExpr).LimitCount.Val)
 		}
 		p = ProjectSetPlan{
 			SrfMapping:  srfMapping,
@@ -708,22 +693,19 @@ func Transform(op node.UnOperation, name string, options *api.RuleOption) *node.
 	return unaryOperator
 }
 
-func extractWindowFuncFields(stmt *ast.SelectStatement) (ast.Fields, map[string]struct{}) {
-	windowFuncsName := make(map[string]struct{})
-	windowFuncFields := make([]ast.Field, 0)
+func extractWindowFuncFields(stmt *ast.SelectStatement) map[string]ast.Field {
+	windowFuncFields := make(map[string]ast.Field)
 	for _, field := range stmt.Fields {
 		if wf, ok := field.Expr.(*ast.Call); ok && wf.FuncType == ast.FuncTypeWindow {
-			windowFuncFields = append(windowFuncFields, field)
-			windowFuncsName[wf.Name] = struct{}{}
+			windowFuncFields[wf.Name] = field
 			continue
 		}
 		if ref, ok := field.Expr.(*ast.FieldRef); ok && ref.AliasRef != nil {
 			if wf, ok := ref.AliasRef.Expression.(*ast.Call); ok && wf.FuncType == ast.FuncTypeWindow {
-				windowFuncFields = append(windowFuncFields, field)
-				windowFuncsName[ref.Name] = struct{}{}
+				windowFuncFields[ref.Name] = field
 				continue
 			}
 		}
 	}
-	return windowFuncFields, windowFuncsName
+	return windowFuncFields
 }

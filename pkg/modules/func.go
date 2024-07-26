@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,26 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package message
+package modules
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
-func TestIsFormatSupported(t *testing.T) {
-	formats := []string{
-		FormatBinary, FormatJson, FormatProtobuf, FormatDelimited, FormatCustom,
-	}
-	for _, format := range formats {
-		assert.True(t, IsFormatSupported(format))
-	}
+type (
+	NewFuncFunc func() api.Function
+)
 
-	badFormats := []string{
-		"BINARY", "Json", "DIY",
-	}
-	for _, format := range badFormats {
-		assert.False(t, IsFormatSupported(format))
-	}
+var Functions = map[string]NewFuncFunc{}
+
+func RegisterFunc(name string, f NewFuncFunc) {
+	Functions[name] = f
 }

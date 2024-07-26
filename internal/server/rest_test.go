@@ -26,6 +26,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -39,6 +40,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
@@ -70,9 +72,11 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/streamdetails", streamDetailsHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 	r.HandleFunc("/streams/{name}/schema", streamSchemaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/tables", tablesHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/tabledetails", tableDetailsHandler).Methods(http.MethodGet)
 	r.HandleFunc("/tables/{name}", tableHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 	r.HandleFunc("/tables/{name}/schema", tableSchemaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules", rulesHandler).Methods(http.MethodGet, http.MethodPost)
@@ -82,8 +86,10 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
+	r.HandleFunc("/rules/{name}/reset_state", ruleStateHandler).Methods(http.MethodPut)
 	r.HandleFunc("/rules/{name}/explain", explainRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/validate", validateRuleHandler).Methods(http.MethodPost)
+	r.HandleFunc("/rules/status/all", getAllRuleStatusHandler).Methods(http.MethodGet)
 	r.HandleFunc("/ruletest", testRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruletest/{name}/start", testRuleStartHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruletest/{name}", testRuleStopHandler).Methods(http.MethodDelete)
@@ -257,10 +263,38 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 		}
 	}
 
+	all, err := streamProcessor.GetAll()
+	require.NoError(suite.T(), err)
+	for key := range all["streams"] {
+		_, err := streamProcessor.DropStream(key, ast.TypeStream)
+		require.NoError(suite.T(), err)
+	}
+	for key := range all["tables"] {
+		_, err := streamProcessor.DropStream(key, ast.TypeTable)
+		require.NoError(suite.T(), err)
+	}
+
 	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream alert() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
 	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
 	w1 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
+
+	buf1 = bytes.NewBuffer([]byte(`{"sql":"create table hello() WITH (DATASOURCE=\"/hello\", FORMAT=\"JSON\", TYPE=\"httppull\")"}`))
+	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/tables", buf1)
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+
+	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/streamdetails", bytes.NewBufferString("any"))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ := io.ReadAll(w1.Result().Body)
+	require.Equal(suite.T(), `[{"name":"alert","type":"mqtt","format":"json"}]`, string(returnVal))
+
+	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/tabledetails", bytes.NewBufferString("any"))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ = io.ReadAll(w1.Result().Body)
+	require.Equal(suite.T(), `[{"name":"hello","type":"httppull","format":"json"}]`, string(returnVal))
 
 	suite.assertGetRuleHiddenPassword()
 
@@ -271,7 +305,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules/validate", buf2)
 	w2 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)
-	returnVal, _ := io.ReadAll(w2.Result().Body)
+	returnVal, _ = io.ReadAll(w2.Result().Body)
 	expect := `{"sources":["alert"],"valid":true}`
 	assert.Equal(suite.T(), http.StatusOK, w2.Code)
 	assert.Equal(suite.T(), expect, string(returnVal))
@@ -784,6 +818,49 @@ func (suite *ServerTestSuite) TestStartRuleAfterSchemaChange() {
 	assert.Equal(suite.T(), err.Error(), "unknown field a")
 }
 
+func (suite *RestTestSuite) TestUpdateRuleOffset() {
+	req1, _ := http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule344421/reset_state", bytes.NewBufferString(`123`))
+	w1 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ := io.ReadAll(w1.Result().Body) //nolint
+	returnStr := string(returnVal)
+	require.Equal(suite.T(), `{"error":1000,"message":"json: cannot unmarshal number into Go value of type server.ruleStateUpdateRequest"}`+"\n", returnStr)
+
+	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule344421/reset_state", bytes.NewBufferString(`{"type":0,"params":{"streamName":"demo","input":{"a":1}}}`))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
+	returnStr = string(returnVal)
+	require.Equal(suite.T(), `{"error":1000,"message":"unknown stateType:0"}`+"\n", returnStr)
+
+	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule344421/reset_state", bytes.NewBufferString(`{"type":1,"params":{"streamName":"demo","input":{"a":1}}}`))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
+	returnStr = string(returnVal)
+	require.Equal(suite.T(), `{"error":1000,"message":"Rule rule344421 is not found in registry"}`+"\n", returnStr)
+	failpoint.Enable("github.com/lf-edge/ekuiper/internal/server/updateOffset", "return(1)")
+	defer func() {
+		failpoint.Disable("github.com/lf-edge/ekuiper/internal/server/updateOffset")
+	}()
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/internal/server/updateOffset", "return(2)")
+	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule344421/reset_state", bytes.NewBufferString(`{"type":1,"params":{"streamName":"demo","input":{"a":1}}}`))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
+	returnStr = string(returnVal)
+	require.Equal(suite.T(), `{"error":1000,"message":"rule rule344421 should be running when modify state"}`+"\n", returnStr)
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/internal/server/updateOffset", "return(3)")
+	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule344421/reset_state", bytes.NewBufferString(`{"type":1,"params":{"streamName":"demo","input":{"a":1}}}`))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
+	returnStr = string(returnVal)
+	require.Equal(suite.T(), `success`, returnStr)
+}
+
 func (suite *RestTestSuite) TestCreateRuleReplacePasswd() {
 	meta.InitYamlConfigManager()
 	confKeyJson := `{"insecureSkipVerify":false,"protocolVersion":"3.1.1","qos":1,"server":"tcp://122.9.166.75:1883","token":"123","password":"4444"}`
@@ -834,6 +911,40 @@ func (suite *RestTestSuite) TestCreateDuplicateRule() {
 	var returnVal []byte
 	returnVal, _ = io.ReadAll(w2.Result().Body)
 	require.Equal(suite.T(), `{"error":1000,"message":"rule test12345 already exists"}`+"\n", string(returnVal))
+}
+
+func (suite *RestTestSuite) TestGetAllRuleStatus() {
+	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream demo456() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
+	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
+	w1 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+
+	ruleJson2 := `{"id":"allRule1","sql":"select * from demo456","actions":[{"log":{}}]}`
+	buf2 := bytes.NewBuffer([]byte(ruleJson2))
+	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
+	w2 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+	require.Equal(suite.T(), http.StatusCreated, w2.Code)
+
+	ruleJson2 = `{"id":"allRule2","sql":"select * from demo456","actions":[{"log":{}}]}`
+	buf2 = bytes.NewBuffer([]byte(ruleJson2))
+	req2, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
+	w2 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+	require.Equal(suite.T(), http.StatusCreated, w2.Code)
+
+	req, _ := http.NewRequest(http.MethodGet, "http://localhost:8080/rules/status/all", bytes.NewBufferString("any"))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+	var returnVal []byte
+	returnVal, _ = io.ReadAll(w.Result().Body)
+	var m map[string]interface{}
+	require.NoError(suite.T(), json.Unmarshal(returnVal, &m))
+	_, ok := m["allRule1"]
+	require.True(suite.T(), ok)
+	_, ok = m["allRule2"]
+	require.True(suite.T(), ok)
 }
 
 func (suite *RestTestSuite) TestSinkHiddenPassword() {

@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,9 +26,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/io/mock"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/mock"
 )
 
 func TestJsonFile(t *testing.T) {
@@ -334,4 +334,36 @@ func TestInvalidJsonLines(t *testing.T) {
 		return
 	}
 	mock.TestSourceOpen(r, exp, t)
+}
+
+func TestParquet(t *testing.T) {
+	path, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	meta := map[string]interface{}{
+		"file": filepath.Join(path, "test", "simple.parq"),
+	}
+	mc := conf.Clock.(*clock.Mock)
+	exp := []api.SourceTuple{
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": int64(1), "name": "user1"}, meta, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": int64(2), "name": "user2"}, meta, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": int64(7), "name": "user7"}, meta, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": int64(8), "name": "user8"}, meta, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": int64(10), "name": "user10"}, meta, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": int64(12), "name": "user12"}, meta, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": int64(15), "name": "user15"}, meta, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": int64(16), "name": "user16"}, meta, mc.Now()),
+	}
+	p := map[string]interface{}{
+		"fileType": "parquet",
+		"path":     filepath.Join(path, "test"),
+	}
+	fs := &FileSource{}
+	err = fs.Configure("simple.parq", p)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	mock.TestSourceOpen(fs, exp, t)
 }

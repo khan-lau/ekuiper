@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG GO_VERSION=1.21.3
+ARG GO_VERSION=1.22.1
 FROM ghcr.io/lf-edge/ekuiper/base:$GO_VERSION-alpine AS builder
 
 COPY . /go/kuiper
@@ -21,7 +21,7 @@ WORKDIR /go/kuiper
 
 RUN make build_with_edgex
 
-FROM alpine:3.20.1
+FROM alpine:3.20.0
 
 # Set environment vars
 ENV MAINTAINER="emqx.io" \

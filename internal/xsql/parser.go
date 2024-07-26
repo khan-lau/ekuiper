@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/message"
+	"github.com/lf-edge/ekuiper/pkg/modules"
 )
 
 type Parser struct {
@@ -715,7 +716,7 @@ func (p *Parser) parseUnaryExpr(isSubField bool) (ast.Expr, error) {
 		return &ast.StringLiteral{Val: lit}, nil
 	} else if tok == ast.INTEGER {
 		val, _ := strconv.Atoi(lit)
-		return &ast.IntegerLiteral{Val: val}, nil
+		return &ast.IntegerLiteral{Val: int64(val)}, nil
 	} else if tok == ast.NUMBER {
 		if v, err := strconv.ParseFloat(lit, 64); err != nil {
 			return nil, fmt.Errorf("found %q, invalid number value.", lit)
@@ -787,10 +788,10 @@ func (p *Parser) parseBracketExpr() (ast.Expr, error) {
 		}
 		if tok3, _ := p.scanIgnoreWhitespace(); tok3 == ast.RBRACKET {
 			// Such as field[2]
-			return &ast.IndexExpr{Index: &ast.IntegerLiteral{Val: start}}, nil
+			return &ast.IndexExpr{Index: &ast.IntegerLiteral{Val: int64(start)}}, nil
 		} else if tok3 == ast.COLON {
 			// Such as field[2:] or field[2:4]
-			return p.parseColonExpr(&ast.IntegerLiteral{Val: start})
+			return p.parseColonExpr(&ast.IntegerLiteral{Val: int64(start)})
 		}
 	} else if tok2 == ast.COLON {
 		// Such as field[:3] or [:]
@@ -821,7 +822,7 @@ func (p *Parser) parseColonExpr(start ast.Expr) (ast.Expr, error) {
 		}
 
 		if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == ast.RBRACKET {
-			return &ast.ColonExpr{Start: start, End: &ast.IntegerLiteral{Val: end}}, nil
+			return &ast.ColonExpr{Start: start, End: &ast.IntegerLiteral{Val: int64(end)}}, nil
 		} else {
 			return nil, fmt.Errorf("Found %q, expected right bracket.", lit1)
 		}
@@ -1193,7 +1194,7 @@ func validateStream(stmt *ast.StreamStmt) error {
 			return fmt.Errorf("'binary' format stream can have only one field")
 		}
 	default:
-		if !message.IsFormatSupported(lf) {
+		if !modules.IsFormatSupported(lf) {
 			return fmt.Errorf("option 'format=%s' is invalid", f)
 		}
 	}
@@ -1454,6 +1455,20 @@ func (p *Parser) parseStreamArrayType() (ast.FieldType, error) {
 					return nil, fmt.Errorf("found %q, expect rparen in struct of array type definition.", lit2)
 				}
 			}
+		} else if t == ast.ARRAY {
+			if f, err := p.parseStreamArrayType(); err != nil {
+				return nil, err
+			} else {
+				if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == ast.RPAREN {
+					lStack.Pop()
+					if lStack.Len() > 0 {
+						return nil, fmt.Errorf("Parenthesis is in array of array type %q not matched.", tok1)
+					}
+					return &ast.ArrayType{Type: ast.ARRAY, FieldType: f}, nil
+				} else {
+					return nil, fmt.Errorf("found %q, expect rparen in array of array type definition.", lit2)
+				}
+			}
 		} else if tok1 == ast.COMMA {
 			p.unscan()
 		} else {
@@ -1670,47 +1685,31 @@ func (p *Parser) parseOver(c *ast.Call) error {
 		return nil
 	} else if function.IsAnalyticFunc(c.Name) || function.IsWindowFunc(c.Name) {
 		if tok1, _ := p.scanIgnoreWhitespace(); tok1 == ast.LPAREN {
-			if t, _ := p.scanIgnoreWhitespace(); t == ast.PARTITION {
-				if t1, l1 := p.scanIgnoreWhitespace(); t1 == ast.BY {
-					pe := &ast.PartitionExpr{}
-					for {
-						if exp, err := p.ParseExpr(); err != nil {
-							return err
-						} else {
-							pe.Exprs = append(pe.Exprs, exp)
-						}
-						if tok, _ := p.scanIgnoreWhitespace(); tok == ast.COMMA {
-							continue
-						}
-						p.unscan()
-						break
-					}
-					if len(pe.Exprs) == 0 {
-						return fmt.Errorf("PARTITION BY must have at least one expression.")
-					}
-					c.Partition = pe
-				} else {
-					return fmt.Errorf("found %q, expected by after partition.", l1)
-				}
-			} else {
-				p.unscan()
+			partitionExpr, err := p.parsePartitionBy()
+			if err != nil {
+				return err
 			}
-
-			if t, _ := p.scanIgnoreWhitespace(); t == ast.WHEN {
-				if exp, err := p.ParseExpr(); err != nil {
+			c.Partition = partitionExpr
+			if function.IsWindowFunc(c.Name) {
+				orderBy, err := p.parseSorts()
+				if err != nil {
 					return err
-				} else {
-					c.WhenExpr = exp
 				}
-			} else {
-				p.unscan()
+				c.SortFields = orderBy
 			}
-			if c.Partition != nil || c.WhenExpr != nil {
+			if function.IsAnalyticFunc(c.Name) {
+				whenExpr, err := p.parseWhen()
+				if err != nil {
+					return err
+				}
+				c.WhenExpr = whenExpr
+			}
+			if c.Partition != nil || len(c.SortFields) > 0 || c.WhenExpr != nil {
 				if ttt, _ := p.scanIgnoreWhitespace(); ttt != ast.RPAREN {
 					return fmt.Errorf("Found %q, expect right parentheses after OVER ", ttt)
 				}
 			}
-			if c.Partition == nil && c.WhenExpr == nil {
+			if c.Partition == nil && len(c.SortFields) == 0 && c.WhenExpr == nil {
 				ttt, _ := p.scanIgnoreWhitespace()
 				return fmt.Errorf("Found %q after OVER (, expect partition by or when.", ttt)
 			}
@@ -1721,4 +1720,46 @@ func (p *Parser) parseOver(c *ast.Call) error {
 	} else {
 		return fmt.Errorf("Found OVER after non analytic function %s", c.Name)
 	}
+}
+
+func (p *Parser) parsePartitionBy() (*ast.PartitionExpr, error) {
+	if t, _ := p.scanIgnoreWhitespace(); t == ast.PARTITION {
+		if t1, l1 := p.scanIgnoreWhitespace(); t1 == ast.BY {
+			pe := &ast.PartitionExpr{}
+			for {
+				if exp, err := p.ParseExpr(); err != nil {
+					return nil, err
+				} else {
+					pe.Exprs = append(pe.Exprs, exp)
+				}
+				if tok, _ := p.scanIgnoreWhitespace(); tok == ast.COMMA {
+					continue
+				}
+				p.unscan()
+				break
+			}
+			if len(pe.Exprs) == 0 {
+				return nil, fmt.Errorf("PARTITION BY must have at least one expression.")
+			}
+			return pe, nil
+		} else {
+			return nil, fmt.Errorf("found %q, expected by after partition.", l1)
+		}
+	} else {
+		p.unscan()
+	}
+	return nil, nil
+}
+
+func (p *Parser) parseWhen() (ast.Expr, error) {
+	if t, _ := p.scanIgnoreWhitespace(); t == ast.WHEN {
+		if exp, err := p.ParseExpr(); err != nil {
+			return nil, err
+		} else {
+			return exp, nil
+		}
+	} else {
+		p.unscan()
+	}
+	return nil, nil
 }

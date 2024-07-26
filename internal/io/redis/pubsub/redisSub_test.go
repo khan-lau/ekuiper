@@ -23,9 +23,9 @@ import (
 	"github.com/stretchr/testify/require"
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 
-	mockContext "github.com/lf-edge/ekuiper/internal/io/mock/context"
 	"github.com/lf-edge/ekuiper/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	mockContext "github.com/lf-edge/ekuiper/pkg/mock/context"
 )
 
 func TestConnectFail(t *testing.T) {

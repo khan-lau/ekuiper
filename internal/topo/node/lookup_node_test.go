@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -146,7 +146,7 @@ func TestLookup(t *testing.T) {
 			output: &xsql.JoinTuples{
 				Content: []*xsql.JoinTuple{
 					{
-						Tuples: []xsql.TupleRow{
+						Tuples: []xsql.Row{
 							&xsql.Tuple{
 								Emitter: "demo",
 								Message: map[string]interface{}{
@@ -163,7 +163,7 @@ func TestLookup(t *testing.T) {
 							},
 						},
 					}, {
-						Tuples: []xsql.TupleRow{
+						Tuples: []xsql.Row{
 							&xsql.Tuple{
 								Emitter: "demo",
 								Message: map[string]interface{}{
@@ -185,7 +185,7 @@ func TestLookup(t *testing.T) {
 		},
 		{
 			input: &xsql.WindowTuples{
-				Content: []xsql.TupleRow{
+				Content: []xsql.Row{
 					&xsql.Tuple{
 						Emitter: "demo",
 						Message: map[string]interface{}{
@@ -206,7 +206,7 @@ func TestLookup(t *testing.T) {
 			output: &xsql.JoinTuples{
 				Content: []*xsql.JoinTuple{
 					{
-						Tuples: []xsql.TupleRow{
+						Tuples: []xsql.Row{
 							&xsql.Tuple{
 								Emitter: "demo",
 								Message: map[string]interface{}{
@@ -223,7 +223,7 @@ func TestLookup(t *testing.T) {
 							},
 						},
 					}, {
-						Tuples: []xsql.TupleRow{
+						Tuples: []xsql.Row{
 							&xsql.Tuple{
 								Emitter: "demo",
 								Message: map[string]interface{}{
@@ -240,7 +240,7 @@ func TestLookup(t *testing.T) {
 							},
 						},
 					}, {
-						Tuples: []xsql.TupleRow{
+						Tuples: []xsql.Row{
 							&xsql.Tuple{
 								Emitter: "demo",
 								Message: map[string]interface{}{
@@ -257,7 +257,7 @@ func TestLookup(t *testing.T) {
 							},
 						},
 					}, {
-						Tuples: []xsql.TupleRow{
+						Tuples: []xsql.Row{
 							&xsql.Tuple{
 								Emitter: "demo",
 								Message: map[string]interface{}{
@@ -274,7 +274,7 @@ func TestLookup(t *testing.T) {
 							},
 						},
 					}, {
-						Tuples: []xsql.TupleRow{
+						Tuples: []xsql.Row{
 							&xsql.Tuple{
 								Emitter: "demo",
 								Message: map[string]interface{}{
@@ -291,7 +291,7 @@ func TestLookup(t *testing.T) {
 							},
 						},
 					}, {
-						Tuples: []xsql.TupleRow{
+						Tuples: []xsql.Row{
 							&xsql.Tuple{
 								Emitter: "demo",
 								Message: map[string]interface{}{
@@ -408,7 +408,7 @@ func TestCachedLookup(t *testing.T) {
 	outputBefore := &xsql.JoinTuples{
 		Content: []*xsql.JoinTuple{
 			{
-				Tuples: []xsql.TupleRow{
+				Tuples: []xsql.Row{
 					&xsql.Tuple{
 						Emitter: "demo",
 						Message: map[string]interface{}{
@@ -426,7 +426,7 @@ func TestCachedLookup(t *testing.T) {
 					},
 				},
 			}, {
-				Tuples: []xsql.TupleRow{
+				Tuples: []xsql.Row{
 					&xsql.Tuple{
 						Emitter: "demo",
 						Message: map[string]interface{}{
@@ -449,7 +449,7 @@ func TestCachedLookup(t *testing.T) {
 	outputAfter := &xsql.JoinTuples{
 		Content: []*xsql.JoinTuple{
 			{
-				Tuples: []xsql.TupleRow{
+				Tuples: []xsql.Row{
 					&xsql.Tuple{
 						Emitter: "demo",
 						Message: map[string]interface{}{

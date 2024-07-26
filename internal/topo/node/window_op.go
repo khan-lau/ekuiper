@@ -503,7 +503,7 @@ func (tl *TupleList) count() int {
 
 func (tl *TupleList) nextCountWindow() *xsql.WindowTuples {
 	results := &xsql.WindowTuples{
-		Content: make([]xsql.TupleRow, 0),
+		Content: make([]xsql.Row, 0),
 	}
 	var subT []*xsql.Tuple
 	subT = tl.tuples[len(tl.tuples)-tl.size : len(tl.tuples)]
@@ -544,7 +544,7 @@ func isOverlapWindow(winType ast.WindowType) bool {
 	}
 }
 
-func (o *WindowOperator) handleInputs(inputs []*xsql.Tuple, right int64, ctx api.StreamContext) ([]*xsql.Tuple, []xsql.TupleRow) {
+func (o *WindowOperator) handleInputs(inputs []*xsql.Tuple, right int64, ctx api.StreamContext) ([]*xsql.Tuple, []xsql.Row) {
 	log := ctx.GetLogger()
 	log.Debugf("window %s triggered at %s(%d)", o.name, time.Unix(right/1000, right%1000), right)
 	var delta int64
@@ -552,7 +552,7 @@ func (o *WindowOperator) handleInputs(inputs []*xsql.Tuple, right int64, ctx api
 	if o.window.Type == ast.HOPPING_WINDOW || o.window.Type == ast.SLIDING_WINDOW {
 		delta = o.calDelta(right, log)
 	}
-	content := make([]xsql.TupleRow, 0, len(inputs))
+	content := make([]xsql.Row, 0, len(inputs))
 	// Sync table
 	left := right - length - delta
 	nextleft := -1

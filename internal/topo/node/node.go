@@ -55,6 +55,10 @@ type DataSourceNode interface {
 	RemoveMetrics(ruleId string)
 }
 
+type SourceInstanceNode interface {
+	GetSource() api.Source
+}
+
 type MergeableTopo interface {
 	GetSource() DataSourceNode
 	// MergeSrc Add child topo as the source with following operators
@@ -158,7 +162,7 @@ func (o *defaultNode) doBroadcast(val interface{}) {
 		case xsql.Collection:
 			val = vt.Clone()
 			break
-		case xsql.TupleRow:
+		case xsql.Row:
 			val = vt.Clone()
 		}
 	}
@@ -233,6 +237,21 @@ func SourcePing(sourceType string, config map[string]interface{}) error {
 		return pingAble.Ping(dataSource, config)
 	}
 	return fmt.Errorf("source %v doesn't support ping connection", sourceType)
+}
+
+func LookupPing(lookupType string, config map[string]interface{}) error {
+	lookup, err := io.LookupSource(lookupType)
+	if err != nil {
+		return err
+	}
+	dataSource := "/$$TEST_CONNECTION$$"
+	if v, ok := config["DATASOURCE"]; ok {
+		dataSource = v.(string)
+	}
+	if pingAble, ok := lookup.(util.PingableConn); ok {
+		return pingAble.Ping(dataSource, config)
+	}
+	return fmt.Errorf("lookup %v doesn't support ping connection", lookupType)
 }
 
 func SinkPing(sinkType string, config map[string]interface{}) error {

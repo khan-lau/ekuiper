@@ -3,6 +3,7 @@ run:
   skip-dirs:
     - internal/plugin
     - extensions/functions/tfLite
+    - internal/pkg/httpx/httptestx
   build-tags:
     - edgex
 
@@ -24,4 +25,4 @@ linters-settings:
       - default
       - prefix(github.com/lf-edge/ekuiper)
   staticcheck:
-    go: '1.21'
+    go: '1.22'
