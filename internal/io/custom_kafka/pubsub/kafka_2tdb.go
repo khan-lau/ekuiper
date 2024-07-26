@@ -192,6 +192,10 @@ func (m *kafka2Tdb) Collect(ctx api.StreamContext, item interface{}) error {
 		return fmt.Errorf("unrecognized format of %s", item)
 	}
 
+	if len(messages) == 0 {
+		return nil
+	}
+
 	err := m.Publish(ctx, messages...)
 	return err
 }

@@ -33,8 +33,6 @@ func (that *SinkFilterAction) Watch(ctx api.StreamContext, record map[string]int
 		return records
 	}
 
-	records = append(records, record)
-
 	if actionObj, ok := record["Action_Sink"]; ok {
 		if action, ok := actionObj.(string); ok {
 
@@ -43,6 +41,8 @@ func (that *SinkFilterAction) Watch(ctx api.StreamContext, record map[string]int
 				cfg, err := ini.Load([]byte(action))
 				if err != nil {
 					ctx.GetLogger().Errorf("parse Action_Sink config error: %s", err)
+					ctx.GetLogger().Warnf("add record to result")
+					records = append(records, record)
 					return records
 				}
 				that.cfg = cfg
@@ -91,10 +91,21 @@ func (that *SinkFilterAction) Watch(ctx api.StreamContext, record map[string]int
 					}
 				default:
 					{
+						ctx.GetLogger().Warnf("add record to result")
+						records = append(records, record)
 					}
 				}
+			} else {
+				ctx.GetLogger().Warnf("add record to result")
+				records = append(records, record)
 			}
+		} else {
+			ctx.GetLogger().Warnf("add record to result")
+			records = append(records, record)
 		}
+	} else {
+		ctx.GetLogger().Warnf("add record to result")
+		records = append(records, record)
 	}
 
 	return records
@@ -327,12 +338,15 @@ func (that *SinkFilterAction) deadCountWash(ctx api.StreamContext, record map[st
 		logger.Errorf("dead count parameter parser fault, %s", err)
 		return records
 	}
-
-	timestamp, err := that.getTimestamp(record)
-	if nil != err {
-		logger.Error(err)
-		return records
+	if count < 1 {
+		count = 1
 	}
+
+	// timestamp, err := that.getTimestamp(record)
+	// if nil != err {
+	// 	logger.Error(err)
+	// 	return records
+	// }
 
 	flagVal, err := strconv.ParseFloat(record["Adjust_Sink"].(string), 64)
 	if nil != err {
@@ -346,25 +360,29 @@ func (that *SinkFilterAction) deadCountWash(ctx api.StreamContext, record map[st
 		oldValFloat, oldTimeInt := oldVal.(float64), that.tags["Time_Sink"].(int64)
 		if math.Abs(val-oldValFloat) < 0.000001 { // 如果值没有变化
 			that.tags["Time_Sink"] = oldTimeInt + 1
-			if that.tags["Time_Sink"].(int64) >= count { // 如果时间戳已经超过阈值
+			if that.tags["Time_Sink"].(int64) >= count-1 { // 如果时间戳已经超过阈值
 				if flag {
+					// logger.Warnf("dead count filter, flag: %v, curr_ount: %d, count: %d, value: %f, timestamp: %d", flag, that.tags["Time_Sink"].(int64), count, val, timestamp)
 					records = append(records, record)
 				}
 			} else {
 				if !flag {
+					// logger.Warnf("dead count filter, flag: %v, curr_ount: %d, count: %d, value: %f, timestamp: %d", flag, that.tags["Time_Sink"].(int64), count, val, timestamp)
 					records = append(records, record)
 				}
 			}
 		} else { // 如果值有变化, 重新计数
-			that.tags["Value_Sink"], that.tags["Time_Sink"] = record["Value_Sink"], timestamp
+			that.tags["Value_Sink"], that.tags["Time_Sink"] = record["Value_Sink"], int64(0)
 			if !flag {
+				// logger.Warnf("dead count filter, flag: %v, curr_ount: %d, count: %d, value: %f, timestamp: %d", flag, that.tags["Time_Sink"].(int64), count, val, timestamp)
 				records = append(records, record)
 			}
 		}
 
 	} else { // 否则记录当前值与时间戳到缓存
-		that.tags["Value_Sink"], that.tags["Time_Sink"] = record["Value_Sink"], timestamp
+		that.tags["Value_Sink"], that.tags["Time_Sink"] = record["Value_Sink"], int64(0)
 		if !flag {
+			// logger.Warnf("dead count filter, flag: %v, curr_ount: %d, count: %d, value: %f, timestamp: %d", flag, that.tags["Time_Sink"].(int64), count, val, timestamp)
 			records = append(records, record)
 		}
 	}
@@ -387,6 +405,10 @@ func (that *SinkFilterAction) deadTimeWash(ctx api.StreamContext, record map[str
 		return records
 	}
 
+	if count < 1 {
+		count = 1
+	}
+
 	timestamp, err := that.getTimestamp(record)
 	if nil != err {
 		logger.Error(err)
@@ -404,21 +426,24 @@ func (that *SinkFilterAction) deadTimeWash(ctx api.StreamContext, record map[str
 
 	if oldVal, ok := that.tags["Value_Sink"]; ok {
 		if oldTime, ok := that.tags["Time_Sink"]; ok {
-			oldValFloat, oldTimeInt := oldVal.(float64), oldTime.(int64)
-
+			oldValFloat := oldVal.(float64)
 			if math.Abs(val-oldValFloat) < 0.000001 { // 如果值没有变化
+				oldTimeInt := oldTime.(int64)
 				if utils.AbsInt64(oldTimeInt-timestamp)/1000 >= count { // 如果时间差超过时长阈值
 					if flag {
+						// logger.Warnf("dead time filter, flag: %v, curr_count: %d, count: %d, value: %f, timestamp: %d", flag, utils.AbsInt64(oldTimeInt-timestamp)/1000, count, val, timestamp)
 						records = append(records, record)
 					}
 				} else {
 					if !flag {
+						// logger.Warnf("dead time filter, flag: %v, curr_count: %d, count: %d, value: %f, timestamp: %d", flag, utils.AbsInt64(oldTimeInt-timestamp)/1000, count, val, timestamp)
 						records = append(records, record)
 					}
 				}
 			} else {
 				that.tags["Value_Sink"], that.tags["Time_Sink"] = record["Value_Sink"], timestamp
 				if !flag {
+					// logger.Warnf("dead time filter, flag: %v, curr_count: %d, count: %d, value: %f, timestamp: %d", flag, 0, count, val, timestamp)
 					records = append(records, record)
 				}
 			}
@@ -426,11 +451,11 @@ func (that *SinkFilterAction) deadTimeWash(ctx api.StreamContext, record map[str
 	} else { // 否则记录当前值与时间戳到缓存
 		that.tags["Value_Sink"], that.tags["Time_Sink"] = record["Value_Sink"], timestamp
 		if !flag {
+			// logger.Warnf("dead time filter, flag: %v, curr_count: %d, count: %d, value: %f, timestamp: %d", flag, 0, count, val, timestamp)
 			records = append(records, record)
 		}
 	}
 
-	records = append(records, record)
 	return records
 }
 
