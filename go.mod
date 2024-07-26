@@ -5,12 +5,8 @@ require (
 	github.com/PaesslerAG/gval v1.2.2
 	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/alicebob/miniredis/v2 v2.30.0
-<<<<<<< HEAD
 	github.com/apache/thrift v0.19.0
 	github.com/apple/foundationdb/bindings/go v0.0.0-20230926042505-6c5b36860c21
-=======
-	github.com/apple/foundationdb/bindings/go v0.0.0-20240530003823-790d661fa218
->>>>>>> v1.14.1_custom
 	github.com/benbjohnson/clock v1.3.5
 	github.com/dop251/goja v0.0.0-20240516125602-ccbae20bcec2
 	github.com/eclipse/paho.mqtt.golang v1.4.3
@@ -19,7 +15,6 @@ require (
 	github.com/felixge/httpsnoop v1.0.4
 	github.com/fxamacker/cbor/v2 v2.6.0
 	github.com/gdexlab/go-render v1.0.1
-	github.com/go-ini/ini v1.67.0
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/golang/protobuf v1.5.4
@@ -30,13 +25,8 @@ require (
 	github.com/jhump/protoreflect v1.16.0
 	github.com/jinzhu/now v1.1.5
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
-<<<<<<< HEAD
-	github.com/klauspost/compress v1.17.2
+	github.com/klauspost/compress v1.17.7
 	github.com/lf-edge/ekuiper/extensions v0.0.0-20231030085318-99dd34783cba
-=======
-	github.com/klauspost/compress v1.17.8
-	github.com/lf-edge/ekuiper/extensions v0.0.0-20240606005720-bdb167e36fd7
->>>>>>> v1.14.1_custom
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/modern-go/reflect2 v1.0.2
 	github.com/montanaflynn/stats v0.7.1
@@ -89,7 +79,6 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2 // indirect
 	github.com/GoogleCloudPlatform/grpc-gcp-go/grpcgcp v1.5.0 // indirect
 	github.com/IBM/nzgo v11.1.0+incompatible // indirect
-	github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
@@ -98,16 +87,9 @@ require (
 	github.com/alexbrainman/odbc v0.0.0-20230814102256-1421b829acc9 // indirect
 	github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302 // indirect
 	github.com/amsokol/ignite-go-client v0.12.2 // indirect
-<<<<<<< HEAD
-	github.com/andybalholm/brotli v1.0.6 // indirect
+	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/apache/arrow/go/v10 v10.0.1 // indirect
 	github.com/apache/calcite-avatica-go/v5 v5.2.0 // indirect
-=======
-	github.com/andybalholm/brotli v1.1.0 // indirect
-	github.com/apache/arrow/go/v15 v15.0.2 // indirect
-	github.com/apache/calcite-avatica-go/v5 v5.3.0 // indirect
-	github.com/apache/thrift v0.20.0 // indirect
->>>>>>> v1.14.1_custom
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/avast/retry-go v3.0.0+incompatible // indirect
@@ -160,6 +142,7 @@ require (
 	github.com/elastic/go-windows v1.0.1 // indirect
 	github.com/envoyproxy/go-control-plane v0.12.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.0.4 // indirect
+	github.com/form3tech-oss/jwt-go v3.2.5+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/fullsailor/pkcs7 v0.0.0-20190404230743-d7302db945fa // indirect
 	github.com/gabriel-vasile/mimetype v1.4.4 // indirect
@@ -195,6 +178,7 @@ require (
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/mock v1.6.0 // indirect
+	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/flatbuffers v24.3.25+incompatible // indirect
 	github.com/google/pprof v0.0.0-20240528025155-186aa0362fba // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
@@ -235,6 +219,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kataras/go-events v0.0.3 // indirect
+	github.com/klauspost/asmfmt v1.3.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/lestrrat-go/strftime v1.0.6 // indirect
@@ -248,6 +233,8 @@ require (
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/michaelquigley/pfxlog v0.6.10 // indirect
 	github.com/miekg/pkcs11 v1.1.1 // indirect
+	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
+	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-ps v1.0.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
@@ -279,6 +266,7 @@ require (
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/posener/order v0.0.1 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/prestodb/presto-go-client v0.0.0-20240426182841-905ac40a1783 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
@@ -289,19 +277,12 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
-<<<<<<< HEAD
-	github.com/shopspring/decimal v1.3.1 // indirect
-	github.com/sijms/go-ora/v2 v2.5.33 // indirect
-	github.com/snowflakedb/gosnowflake v1.6.19 // indirect
-=======
-	github.com/segmentio/encoding v0.4.0 // indirect
-	github.com/segmentio/kafka-go v0.4.47 // indirect
+	github.com/segmentio/encoding v0.3.6 // indirect
 	github.com/shirou/gopsutil/v3 v3.24.4 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
-	github.com/sijms/go-ora/v2 v2.8.19 // indirect
-	github.com/snowflakedb/gosnowflake v1.10.1 // indirect
->>>>>>> v1.14.1_custom
+	github.com/sijms/go-ora/v2 v2.5.33 // indirect
+	github.com/snowflakedb/gosnowflake v1.6.19 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/speps/go-hashids v2.0.0+incompatible // indirect
 	github.com/spf13/cast v1.6.0 // indirect
@@ -316,9 +297,8 @@ require (
 	github.com/uber/athenadriver v1.1.15 // indirect
 	github.com/vertica/vertica-sql-go v1.3.3 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
-	github.com/xdg-go/scram v1.1.2 // indirect
-	github.com/xdg-go/stringprep v1.0.4 // indirect
+	github.com/xdg/scram v1.0.5 // indirect
+	github.com/xdg/stringprep v1.0.3 // indirect
 	github.com/xo/dburl v0.23.1 // indirect
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2 // indirect
 	github.com/yuin/gopher-lua v1.1.0 // indirect
